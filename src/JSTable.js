@@ -71,7 +71,7 @@ class JSTable {
      * @param {string} title The title of the table (`<caption>`).
      * @param {string} titlePos The position of the title (caption-side CSS property): 'bottom' or 'top' (by default).
      * @param {string} orientation The orientation of the table: 'vertical' or 'horizontal' (by default).
-     * @param {Array<Array<PartOfTable>>} cells An array that contains all the cells of the table.
+     * @param {Array<Array<PartOfTable|BreakPointCell>>} cells An array that contains all the cells of the table.
      * @param {Array<Object>} attributes An array in which you can define some attributes to add to the generated table.
      */
     constructor({parent, title, titlePos, orientation, cells, attributes}) {
@@ -136,7 +136,7 @@ class JSTable {
 
     /**
      * We pretend that the painting is vertical while we build it horizontally.
-     * @returns {Array<Array<PartOfTable>>} An array of arrays of cells.
+     * @returns {Array<Array<PartOfTable|BreakPointCell>>} An array of arrays of cells.
      */
     _reorganizeCellsForVerticalTable() {
         var numberOfColumns = this.cells.length;

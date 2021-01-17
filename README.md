@@ -62,7 +62,7 @@ JSTable takes only one argument: an object. However, inside this object, you can
 |title|string|_empty string_|The title of the table (`<caption>`)|
 |titlePos|string|'top'|The position of the title (caption-side CSS property): 'bottom' or 'top'.|
 |orientation|string|'horizontal'|The orientation of the table: 'vertical' or 'horizontal'.|
-|cells|`Array<Array<PartOfTable>>`|_empty array_|An array that contains all the cells of the table.|
+|cells|`Array<Array<PartOfTable|BreakPointCell>>`|_empty array_|An array that contains all the cells of the table.|
 |attributes|`Array<Object>`|_empty array_|An array in which you can define some attributes to add to the generated table.|
 
 To go further, you also have some methods from JSTable:
