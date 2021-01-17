@@ -17,7 +17,7 @@ var table = new JSTable({
     orientation: 'horizontal', // 'vertical' or 'horizontal', 'horizontal' is the default value
     parent: '#container', // the query selector of the parent, by default: document.body
     title: 'A weird test', // the title of the table
-    titlePos: 'top', // the position of the title
+    titlePos: 'top', // the position of the title: 'top' by default, or 'bottom'
     cells: // the cells to put inside the table
     [
         [
