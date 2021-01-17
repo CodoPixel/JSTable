@@ -22,7 +22,7 @@ var table = new JSTable({
     [
         // each array inside `cells` is a line of your table
         [
-            new Cell(""), // an empty cell
+            new Cell(""), // an empty cell in the upper left corner
             new MainCell("Age"), // a main cell (<th>)
             new MainCell("City"),
             new MainCell("Sex")
