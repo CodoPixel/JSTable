@@ -20,6 +20,7 @@ var table = new JSTable({
     titlePos: 'top', // the position of the title: 'top' by default, or 'bottom'
     cells: // the cells to put inside the table
     [
+        // each array inside `cells` is a line of your table
         [
             new Cell(""), // an empty cell
             new MainCell("Age"), // a main cell (<th>)
