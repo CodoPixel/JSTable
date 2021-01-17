@@ -57,6 +57,7 @@ This will generate a table inside the given parent element.
 JSTable takes only one argument: an object. However, inside this object, you can put some options...Here is a summary:
 
 |Name|Type|Default value|description|
+|----|----|-------------|-----------|
 |parent|string|document.body|The query selector of the parent in which to put the generated table.|
 |title|string|_empty string_|The title of the table (`<caption>`)|
 |titlePos|string|'top'|The position of the title (caption-side CSS property): 'bottom' or 'top'.|
