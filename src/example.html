@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>testing JSTable</title>
 
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style-example.css">
 </head>
 <body>
 
@@ -14,6 +14,40 @@
     <script src="JSTable.js"></script>
     <script>
         var table = new JSTable({
+            orientation: 'horizontal',
+            parent: '#container',
+            title: 'A weird test',
+            titlePos: 'top',
+            cells:
+            [
+                [
+                    new Cell(""),
+                    new MainCell("Age"),
+                    new MainCell("City"),
+                    new MainCell("Sex")
+                ],
+                [
+                    new MainCell("Thomas"),
+                    new Cell("17 ans"),
+                    new Cell("Lille"),
+                    new Cell("Male"),
+                ],
+                [
+                    new MainCell("Sarah"),
+                    new Cell("No data", {colspan: 2}),
+                    new BreakPointCell(),
+                    new Cell("Female"),
+                ]
+            ]
+        });
+
+        table.generate();
+    </script>
+</body>
+</html>
+
+<!-- 
+    var table = new JSTable({
             orientation: 'horizontal',
             parent: '#container',
             title: 'A weird test',
@@ -40,8 +74,4 @@
                 ]
             ]
         });
-
-        table.generate();
-    </script>
-</body>
-</html>
+ -->
