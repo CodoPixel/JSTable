@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>testing JSTable</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="container"></div>
+
+    <script src="JSTable.js"></script>
+    <script>
+        var table = new JSTable({
+            orientation: 'horizontal',
+            parent: '#container',
+            title: 'A weird test',
+            titlePos: 'top',
+            cells:
+            [
+                [
+                    new Cell(""),
+                    new MainCell("Age"),
+                    new MainCell("City"),
+                    new MainCell("Sex")
+                ],
+                [
+                    new MainCell("Thomas"),
+                    new Cell("No data", {colspan: 2, rowspan: 2}),
+                    new BreakPointCell(),
+                    new Cell("Male"),
+                ],
+                [
+                    new MainCell("Sarah"),
+                    new BreakPointCell(),
+                    new BreakPointCell(),
+                    new Cell("Female"),
+                ]
+            ]
+        });
+
+        table.generate();
+    </script>
+</body>
+</html>
