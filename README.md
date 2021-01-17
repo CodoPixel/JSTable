@@ -15,7 +15,7 @@ Now, you can create a new `JSTable()` which takes a lot of arguments in a single
 ```
 var table = new JSTable({
     orientation: 'horizontal', // 'vertical' or 'horizontal', 'horizontal' is the default value
-    parent: '#container', // the query selector of the parent
+    parent: '#container', // the query selector of the parent, by default: document.body
     title: 'A weird test', // the title of the table
     titlePos: 'top', // the position of the title
     cells: // the cells to put inside the table
@@ -49,3 +49,7 @@ table.generate();
 ```
 
 This will generate a table inside the given parent element.
+
+## More complex tables
+
+// Work in progress
