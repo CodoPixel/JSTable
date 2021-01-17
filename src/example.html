@@ -28,40 +28,6 @@
                 ],
                 [
                     new MainCell("Thomas"),
-                    new Cell("17 ans"),
-                    new Cell("Lille"),
-                    new Cell("Male"),
-                ],
-                [
-                    new MainCell("Sarah"),
-                    new Cell("No data", {colspan: 2}),
-                    new BreakPointCell(),
-                    new Cell("Female"),
-                ]
-            ]
-        });
-
-        table.generate();
-    </script>
-</body>
-</html>
-
-<!-- 
-    var table = new JSTable({
-            orientation: 'horizontal',
-            parent: '#container',
-            title: 'A weird test',
-            titlePos: 'top',
-            cells:
-            [
-                [
-                    new Cell(""),
-                    new MainCell("Age"),
-                    new MainCell("City"),
-                    new MainCell("Sex")
-                ],
-                [
-                    new MainCell("Thomas"),
                     new Cell("No data", {colspan: 2, rowspan: 2}),
                     new BreakPointCell(),
                     new Cell("Male"),
@@ -74,4 +40,8 @@
                 ]
             ]
         });
- -->
+
+        table.generate();
+    </script>
+</body>
+</html>
