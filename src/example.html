@@ -18,6 +18,7 @@
             parent: '#container',
             title: 'A weird test',
             titlePos: 'top',
+            cellsPerLine: 4,
             cells:
             [
                 [
@@ -28,14 +29,14 @@
                 ],
                 [
                     new MainCell("Thomas"),
-                    new Cell("No data", {colspan: 2, rowspan: 2}),
-                    new BreakPointCell(),
+                    new Cell("No data", {rowspan: 2}),
+                    new Cell("Halluin"),
                     new Cell("Male"),
                 ],
                 [
                     new MainCell("Sarah"),
                     new BreakPointCell(),
-                    new BreakPointCell(),
+                    new Cell("Halluin"),
                     new Cell("Female"),
                 ]
             ]

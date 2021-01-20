@@ -18,6 +18,7 @@ var table = new JSTable({
     parent: '#container', // the query selector of the parent, by default: document.body
     title: 'A weird test', // the title of the table
     titlePos: 'top', // the position of the title: 'top' by default, or 'bottom'
+    cellsPerLine: 4, // the number of cells per line
     cells: // the cells to put inside the table
     [
         // each array inside `cells` is a line of your table
@@ -64,6 +65,7 @@ JSTable takes only one argument: an object. However, inside this object, you can
 |orientation|string|'horizontal'|The orientation of the table: 'vertical' or 'horizontal'.|
 |cells|`Array<Array<PartOfTable\|BreakPointCell>>`|_empty array_|An array that contains all the cells of the table.|
 |attributes|`Array<Object>`|_empty array_|An array in which you can define some attributes to add to the generated table.|
+|cellsPerLine|number|The number of cells in the first line|The number of cells per line|
 
 To go further, you also have some methods from JSTable:
 
@@ -135,4 +137,4 @@ var table = new JSTable({
 table.generate();
 ```
 
-*Warning*: if you use `rowspan` or `colspan`, then you may have to change the javascript structure of your table if you change the orientation.
+*Warning*: if you use `rowspan` AND `colspan`, then you may have to change the javascript structure of your table if you change the orientation. However, since v1.1.0, rowspan and colspan attributes are better implemented.
