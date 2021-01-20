@@ -18,6 +18,14 @@ class PartOfTable {
         this.classname = options.classname || '';
     }
 
+    invertRowspanAndColspan() {
+        try {
+            [this.rowspan, this.colspan] = [this.colspan, this.rowspan];
+        } catch(e) {
+            console.error("A feature is not supported by your navigator because it is too old.");
+        }
+    }
+
     getText() { return this.text; }
     getRowspan() { return this.rowspan; }
     getColspan() { return this.colspan; }
@@ -73,13 +81,15 @@ class JSTable {
      * @param {string} orientation The orientation of the table: 'vertical' or 'horizontal' (by default).
      * @param {Array<Array<PartOfTable|BreakPointCell>>} cells An array that contains all the cells of the table.
      * @param {Array<Object>} attributes An array in which you can define some attributes to add to the generated table.
+     * @param {number} cellsPerLine The number of cells per line.
      */
-    constructor({parent, title, titlePos, orientation, cells, attributes}) {
+    constructor({parent, title, titlePos, orientation, cells, attributes, cellsPerLine}) {
         this.parent = document.querySelector(parent) || document.body;
         this.title = title || '';
         this.titlePos = titlePos || 'top';
         this.cells = cells || [];
         this.attributes = attributes || [];
+        this.cellsPerLine = cellsPerLine;
         this.setOrientation(orientation);
     }
 
@@ -140,15 +150,17 @@ class JSTable {
      */
     _reorganizeCellsForVerticalTable() {
         var numberOfColumns = this.cells.length;
-        var numberOfLines = this.cells[0].length; // every line must have the same number of cells.
+        var numberOfLines = this.cellsPerLine || this.cells[0].length; // every line must have the same number of cells.
 
         // destructure the input
         var newArrayOfCells = []; // [[0, 0], [1, 1], [2, 2], [3, 3]]
         for (var i = 0; i < numberOfLines; i++) {
             newArrayOfCells[i] = [];
             for (var e = 0; e < numberOfColumns; e++) {
-                newArrayOfCells[i][e] = this.cells[e][i];
-            } 
+                var currentCell = this.cells[e][i];
+                if (currentCell instanceof PartOfTable) currentCell.invertRowspanAndColspan();
+                newArrayOfCells[i][e] = currentCell;
+            }
         }
 
         return newArrayOfCells;
