@@ -63,6 +63,49 @@ class MainCell extends PartOfTable {
 }
 
 /**
+ * Generates a cell with a random number in it and to each cell, we add a specific class: 'cell-random'.
+ */
+class RandomCell extends PartOfTable {
+    /**
+     * Generates a cell with a random number in it and to each cell, we add a specific class: 'cell-random'.
+     * @param {number} min The minimum random number
+     * @param {number} max The maximum random number
+     * @param {Array<Object<String>>} options Options you can add to the cell.
+     */
+    constructor(min, max, options) {
+        if (options) {
+            if (options.classname) {
+                options.classname += " cell-random";
+            } else {
+                options.classname = "cell-random";
+            }
+        } else {
+            options = {classname: "cell-random"};
+        }
+
+        super("", options);
+
+        this.min = Math.ceil(min) || 0;
+        this.max = Math.floor(max) || 1;
+        this.number = this.getRandomIntInclusive();
+        
+        this.text = this.number.toString();
+    }
+
+    /**
+     * @returns {number} A random number between `min` (included) & `man` (included).
+     */
+    getRandomIntInclusive() {
+        return Math.floor(Math.random() * (this.max - this.min + 1)) + this.min;
+    }
+
+    /**
+     * Get the generated random number during the creation of the cell.
+     */
+    getNumber() { return this.number; }
+}
+
+/**
  * Generates a fake cell in order to the cells to have rowspan & colspan attributes without throwing an Error.
  */
 class BreakPointCell {
@@ -112,6 +155,24 @@ class JSTable {
     }
 
     /**
+     * Set the cells that the table will contain.
+     * @param {Array<Array<PartOfTable|BreakPointCell>>} cells An array that contains all the cells of the table. By default an empty array.
+     * @param {number} cellsPerLine The number of cells per line.
+     */
+    setCells(cells, cellsPerLine) {
+        this.cellsPerLine = cellsPerLine;
+        this.cells = cells || [];
+    }
+
+    /**
+     * Get the cells contained in the table.
+     * @returns {Array<Array<PartOfTable|BreakPointCell>>} The cells of the table.
+     */
+    getCells() {
+        return this.cells;
+    }
+
+    /**
      * Generates the `<caption>` of the table.
      */
     _genCaption() {
@@ -136,7 +197,7 @@ class JSTable {
         htmlCell.setAttribute('scope', cell.getScope());
         htmlCell.setAttribute('id', cell.getID());
         if (cell.getClassname()) {
-            var classes = cell.getClassname().split(' ');
+            var classes = cell.getClassname().trim().split(' ');
             classes.forEach(function(clas) {
                 htmlCell.classList.add(clas);
             });
@@ -164,6 +225,29 @@ class JSTable {
         }
 
         return newArrayOfCells;
+    }
+
+    /**
+     * Generates duplicated cells inside a same line.
+     * @param {PartOfTable} startsWith The beginning of the line (optional)
+     * @param {Function} inLine The cells to be generated inside the line.
+     * @param {PartOfTable} endsWith The end of the line (optional);
+     */
+    generateLine({startsWith, inLine, endsWith}) {
+        var line = [];
+        var cellsInLine = [];
+        var numberOfCells = this.cellsPerLine;
+        if (!numberOfCells) {
+            throw new Error("You must define a number of cells per line if you want to use 'generateLin()'.");
+        }
+
+        for (var i = 0; i < this.cellsPerLine; i++) {
+            cellsInLine[i] = inLine(i);
+        }
+
+        line[0] = startsWith;
+        line[line.length] = cellsInLine;
+        line[line.length] = endsWith;
     }
 
     /**

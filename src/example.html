@@ -19,29 +19,26 @@
             title: 'A weird test',
             titlePos: 'top',
             cellsPerLine: 4,
-            cells:
-            [
-                [
-                    new Cell(""),
-                    new MainCell("Age"),
-                    new MainCell("City"),
-                    new MainCell("Sex")
-                ],
-                [
-                    new MainCell("Thomas"),
-                    new Cell("No data", {rowspan: 2}),
-                    new Cell("Halluin"),
-                    new Cell("Male"),
-                ],
-                [
-                    new MainCell("Sarah"),
-                    new BreakPointCell(),
-                    new Cell("Halluin"),
-                    new Cell("Female"),
-                ]
-            ]
         });
 
+        // TODO : startsWith & endsWith must be arrays in order to add several cells at the same time
+
+        cells = [
+            table.generateLine({
+                startsWith: new MainCell("Random int"),
+                inLine: function(i) { return new Cell(i); },
+                endsWith: new MainCell("End"),
+            }),
+            [
+                new MainCell("Sum"),
+                new Cell("0"),
+                new Cell("0"),
+                new Cell("0"),
+                new Cell("0"),
+            ]
+        ];
+
+        table.setCells(cells, 4);
         table.generate();
     </script>
 </body>
