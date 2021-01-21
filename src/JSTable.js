@@ -16,6 +16,7 @@ class PartOfTable {
         this.scope = options.scope || '';
         this.id = options.id || '';
         this.classname = options.classname || '';
+        this.allowInterpretation = true;
     }
 
     invertRowspanAndColspan() {
@@ -32,6 +33,9 @@ class PartOfTable {
     getScope() { return this.scope; }
     getID() { return this.id; }
     getClassname() { return this.classname; }
+    isAllowedToInterpret() { return this.allowInterpretation; }
+    disableInterpretation() { this.allowInterpretation = false; }
+    enableInterpretation() { this.allowInterpretation = true; }
 }
 
 /**
@@ -134,7 +138,13 @@ class JSTable {
         this.attributes = attributes || [];
         this.cellsPerLine = cellsPerLine;
         this.setOrientation(orientation);
+        this.table = null;
     }
+
+    /**
+     * @returns {HTMLTableElement} The generated table. Returns `null` if the table does not yet exist.
+     */
+    getTable() { return this.table; }
 
     /**
      * Gets the orientation of the table.
@@ -179,7 +189,7 @@ class JSTable {
         var caption = document.createElement('caption');
         caption.innerHTML = this.title || '';
         caption.style.captionSide = this.titlePos;
-        return caption;
+        this.table.appendChild(caption);
     }
 
     /**
@@ -191,7 +201,7 @@ class JSTable {
         var htmlCell = document.createElement('td');
         if (cell instanceof MainCell) htmlCell = document.createElement('th');
 
-        htmlCell.innerHTML = cell.getText();
+        htmlCell.innerHTML = this.interpret(cell.getText(), cell.isAllowedToInterpret());
         htmlCell.setAttribute('rowspan', cell.getRowspan());
         htmlCell.setAttribute('colspan', cell.getColspan());
         htmlCell.setAttribute('scope', cell.getScope());
@@ -230,24 +240,85 @@ class JSTable {
     /**
      * Generates duplicated cells inside a same line.
      * @param {PartOfTable} startsWith The beginning of the line (optional)
-     * @param {Function} inLine The cells to be generated inside the line.
+     * @param {Function} inLine The cells to be generated inside the line
      * @param {PartOfTable} endsWith The end of the line (optional);
+     * @returns {Array<PartOfTable>} The generated line which contained cells
      */
     generateLine({startsWith, inLine, endsWith}) {
         var line = [];
-        var cellsInLine = [];
-        var numberOfCells = this.cellsPerLine;
-        if (!numberOfCells) {
+        if (startsWith) line[0] = startsWith; 
+
+        if (!this.cellsPerLine) {
             throw new Error("You must define a number of cells per line if you want to use 'generateLin()'.");
         }
 
         for (var i = 0; i < this.cellsPerLine; i++) {
-            cellsInLine[i] = inLine(i);
+            line[line.length] = inLine(i);
         }
+        
+        if (endsWith) line[line.length] = endsWith;
+        return line;
+    }
 
-        line[0] = startsWith;
-        line[line.length] = cellsInLine;
-        line[line.length] = endsWith;
+    /**
+     * Determines whether or not it is possible to interpret the content.
+     * @returns {boolean} True if it is possible to interpret the code & if it's allowed.
+     */
+    isAllowedToInterpret(content, isAllowed) {
+        if (isAllowed === false) return false;
+        if (!/#[0-9]{1,}-[0-9]{1,}/gmi.test(content)) return false;
+        return true;
+    }
+
+    /**
+     * Gets the content of a cell from `table`.
+     * @param {string} identifier `#r-d` => `r` is the line number, `d` is the cell number. *The numbers begin at 0*. You cannot get the contents of a cell if it is in the same line when creating that same line.
+     * @param {HTMLTableElement} table The table in which you want to read the contents of the cell.
+     * @returns {string} The content of the cell. Returns an empty string if the cell is not found.
+     */
+    readCell(identifier, table) {
+        if (!table) table = this.table;
+        if (!/#[0-9]{1,}-[0-9]{1,}/gmi.test(identifier)) return '';
+
+        var line = identifier.match(/[0-9]{1,}/gm)[0];
+        var cell = identifier.match(/[0-9]{1,}/gm)[1];
+
+        var allTr = table.querySelectorAll('tr');
+        if (!allTr[line]) {
+            console.error("readCell(): unable to find the content of the cell. The line doesn't exist.");
+            return '';
+        }
+        
+        try {
+            var content = allTr[line].childNodes[cell].innerHTML;
+            return content;
+        } catch (e) {
+            console.error("readCell(): unable to interpret the content of the cell. The cell doesn't exist.");
+            return '';
+        }
+    }
+
+    interpret(content, isAllowed) {
+        if (isAllowed === null || isAllowed === undefined) isAllowed = true;
+
+        if (this.isAllowedToInterpret(content, isAllowed)) {
+            var sequences = content.match(/#[0-9]{1,}-[0-9]{1,}/gmi);
+            var newContent = content;
+            var self = this;
+            sequences.forEach(function(sequence) {
+                newContent = newContent.replace(new RegExp(sequence, "g"), self.readCell(sequence, self.table));
+            });
+
+            try {
+                newContent = eval(newContent);
+            } catch(e) {
+                console.info("Unable to evaluate the content inside the cell while interpreting it.");
+            } finally {
+                return newContent;
+            }
+        } else {
+            return content;
+        }
     }
 
     /**
@@ -259,13 +330,12 @@ class JSTable {
             orientation = this.orientation;
         }
 
-        var table = document.createElement('table');
-        var caption = this._genCaption();
-        table.appendChild(caption);
+        this.table = document.createElement('table');
 
         if (this.attributes) {
+            var self = this;
             this.attributes.forEach(function(attr) {
-                table.setAttribute(attr.name, attr.value);
+                self.table.setAttribute(attr.name, attr.value);
             });
         }
 
@@ -274,13 +344,14 @@ class JSTable {
 
         for (var line of cells) {
             var tr = document.createElement('tr');
+            // TODO: we must be able to interpret the content of the same line while the creating this line.
             for (var cell of line) {
                 if (cell instanceof BreakPointCell) continue;
                 tr.appendChild(this._genCell(cell));
             }
-            table.appendChild(tr);
+            this.table.appendChild(tr);
         }
 
-        this.parent.appendChild(table);
+        this.parent.appendChild(this.table);
     }
 }

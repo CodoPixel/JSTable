@@ -26,8 +26,8 @@
         cells = [
             table.generateLine({
                 startsWith: new MainCell("Random int"),
-                inLine: function(i) { return new Cell(i); },
-                endsWith: new MainCell("End"),
+                inLine: function(i) { return new RandomCell(0, 9); },
+                endsWith: new Cell("T"),
             }),
             [
                 new MainCell("Sum"),
@@ -35,8 +35,12 @@
                 new Cell("0"),
                 new Cell("0"),
                 new Cell("0"),
+                new Cell("#0-1 + #0-2 + #0-3 + #0-4")
+                // We should seperate the sequences thanks to "{}": "Total = {#0-1 + #0-2 + #0-3 + #0-4}"
             ]
         ];
+
+        console.log(cells);
 
         table.setCells(cells, 4);
         table.generate();
