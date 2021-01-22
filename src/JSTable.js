@@ -23,7 +23,11 @@ class PartOfTable {
         try {
             [this.rowspan, this.colspan] = [this.colspan, this.rowspan];
         } catch(e) {
-            console.error("A feature is not supported by your navigator because it is too old.");
+            var temp_rowspan = this.rowspan;
+            var temp_colspan = this.colspan;
+            this.colspan = temp_rowspan;
+            this.rowspan = temp_colspan;
+            console.info("A feature is not properly supported by your navigator because it is too old. Consider changing your browser.");
         }
     }
 
