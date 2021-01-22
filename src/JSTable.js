@@ -201,7 +201,11 @@ class JSTable {
         var htmlCell = document.createElement('td');
         if (cell instanceof MainCell) htmlCell = document.createElement('th');
 
-        htmlCell.innerHTML = this.interpret(cell.getText(), cell.isAllowedToInterpret());
+        if (cell.isAllowedToInterpret) {
+            htmlCell.innerHTML = this.interpret(cell.getText());
+        } else {
+            htmlCell.innerHTML = cell.getText();
+        }
         htmlCell.setAttribute('rowspan', cell.getRowspan());
         htmlCell.setAttribute('colspan', cell.getColspan());
         htmlCell.setAttribute('scope', cell.getScope());
@@ -249,7 +253,7 @@ class JSTable {
         if (startsWith) line[0] = startsWith; 
 
         if (!this.cellsPerLine) {
-            throw new Error("You must define a number of cells per line if you want to use 'generateLin()'.");
+            throw new Error("You must define a number of cells per line if you want to use 'generateLine()'.");
         }
 
         for (var i = 0; i < this.cellsPerLine; i++) {
@@ -258,16 +262,6 @@ class JSTable {
         
         if (endsWith) line[line.length] = endsWith;
         return line;
-    }
-
-    /**
-     * Determines whether or not it is possible to interpret the content.
-     * @returns {boolean} True if it is possible to interpret the code & if it's allowed.
-     */
-    isAllowedToInterpret(content, isAllowed) {
-        if (isAllowed === false) return false;
-        if (!/#[0-9]{1,}-[0-9]{1,}/gmi.test(content)) return false;
-        return true;
     }
 
     /**
@@ -298,19 +292,33 @@ class JSTable {
         }
     }
 
-    interpret(content, isAllowed) {
-        if (isAllowed === null || isAllowed === undefined) isAllowed = true;
+    _getSequencesFrom(content) {
+        var sequenceRegex = /\{[\D\d][^}]{1,}/gmi;
+        return content.match(sequenceRegex);
+    }
 
-        if (this.isAllowedToInterpret(content, isAllowed)) {
-            var sequences = content.match(/#[0-9]{1,}-[0-9]{1,}/gmi);
+    interpret(content) {
+        if (/#[0-9]{1,}-[0-9]{1,}/gmi.test(content)) {
+            var allSequences = this._getSequencesFrom(content);
             var newContent = content;
             var self = this;
-            sequences.forEach(function(sequence) {
-                newContent = newContent.replace(new RegExp(sequence, "g"), self.readCell(sequence, self.table));
+
+            // First of call, replace the symbols "#r-l" by their content.
+            allSequences.forEach(function(sequence) {
+                var allCalls = sequence.match(/#[0-9]{1,}-[0-9]{1,}/gmi);
+                for (var call of allCalls) {
+                    newContent = newContent.replace(new RegExp(call, "g"), self.readCell(call, self.table));
+                }
             });
 
             try {
-                newContent = eval(newContent);
+                // Do the calculations inside the content
+                this._getSequencesFrom(newContent).forEach(function(sequence) {
+                    var evaluatedContent = eval(sequence.replace(/\{|\}/gm, ""));
+                    newContent = newContent.replace(sequence, evaluatedContent.toString());
+                });
+                // Replace these brackets
+                newContent = newContent.replace(/\{|\}/gm, "");
             } catch(e) {
                 console.info("Unable to evaluate the content inside the cell while interpreting it.");
             } finally {
