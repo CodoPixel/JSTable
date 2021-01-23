@@ -5,7 +5,7 @@ class PartOfTable {
     /**
      * The cell of a table.
      * @param {string|HTMLElement} content The content to be displayed in the cell.
-     * @param {Array<Object<string>>} options Options you can add to the cell.
+     * @param {object} options Options you can add to the cell.
      */
     constructor(content, options) {
         this.isElement = content instanceof HTMLElement;
@@ -69,6 +69,18 @@ class PartOfTable {
      * @returns {string} The classes of the cell. Separate the different classes with white spaces.
      */
     getClassname() { return this.classname; }
+
+    /**
+     * Adds a single class to the cell.
+     * @param {string} cla A class to add to the cell.
+     */
+    addSingleClass(cla) {
+        if (this.classname.length > 0) {
+            this.classname += " " + cla;
+        } else {
+            this.classname = cla;
+        }
+    }
 
     /**
      * @returns {boolean} Is JSTable allowed to interpret the code inside the cell ?
@@ -138,7 +150,7 @@ class RandomCell extends PartOfTable {
         super("", options);
 
         this.number = this.getRandomIntInclusive(min, max);
-        this.text = this.number.toString();
+        this.content = this.number.toString();
     }
 
     /**
@@ -185,13 +197,14 @@ class JSTable {
      * @param {Array<Object>} attributes An array in which you can define some attributes to add to the generated table.
      * @param {number} cellsPerLine The number of cells per line. Useless for horizontal tables.
      */
-    constructor({parent, title, titlePos, orientation, cells, attributes, cellsPerLine}) {
+    constructor({parent, title, titlePos, orientation, cells, attributes, cellsPerLine, commonClass}) {
         this.parent = document.querySelector(parent) || document.body;
         this.title = title || '';
         this.titlePos = titlePos || 'top';
         this.cells = cells || [];
         this.attributes = attributes || [];
         this.cellsPerLine = cellsPerLine;
+        this.commonClass = commonClass;
         this.setOrientation(orientation);
         this.table = null;
     }
@@ -220,13 +233,42 @@ class JSTable {
     }
 
     /**
+     * Set classes common to all cells.
+     * @param {string} commonClass The classes to add to each cell. Separate the classes with white spaces.
+     */
+    setCommonClass(commonClass) {
+        if (!commonClass) {
+            if (!this.commonClass) {
+                return;
+            } else {
+                commonClass = this.commonClass;
+            }
+        } else {
+            this.commonClass = commonClass;
+        }
+
+        var self = this;
+        var classes = commonClass.split(" ");
+        classes.forEach(function(cla) {
+            self.cells.forEach(function(line) {
+                line.forEach(function(cell) {
+                    cell.addSingleClass(cla);
+                });
+            });
+        });
+    }
+
+    /**
      * Set the cells that the table will contain.
      * @param {Array<Array<PartOfTable|BreakPointCell>>} cells An array that contains all the cells of the table. By default an empty array.
      * @param {number} cellsPerLine The number of cells per line.
      */
-    setCells(cells, cellsPerLine) {
+    setCells(cells, cellsPerLine, commonClass) {
         this.cellsPerLine = cellsPerLine;
         this.cells = cells || [];
+        if (commonClass) {
+            this.setCommonClass(commonClass);
+        }
     }
 
     /**
@@ -265,7 +307,6 @@ class JSTable {
                 htmlCell.innerHTML = cell.getContent();
             }
         }
-        
 
         htmlCell.setAttribute('rowspan', cell.getRowspan());
         htmlCell.setAttribute('colspan', cell.getColspan());
@@ -318,8 +359,12 @@ class JSTable {
             throw new Error("You must define a number of cells per line if you want to use 'generateLine()'.");
         }
 
-        for (var i = 0; i < cellsToGenerate; i++) {
-            line[line.length] = inLine(i);
+        try {
+            for (var i = 0; i < cellsToGenerate; i++) {
+                line[line.length] = inLine(i);
+            }
+        } catch(e) {
+            throw new Error("JSTable generateLine(): cannot execute the function from the inLine parameter.");
         }
         
         if (endsWith) line[line.length] = endsWith;
@@ -390,10 +435,11 @@ class JSTable {
                 });
                 // Replace these brackets
                 newContent = newContent.replace(/\{|\}/gm, "");
+
+                return newContent;
             } catch(e) {
                 console.info("Unable to evaluate the content inside the cell while interpreting it.");
-            } finally {
-                return newContent;
+                return content;
             }
         } else {
             return content;
@@ -405,11 +451,10 @@ class JSTable {
      * @param {string} orientation The orientation of the table.
      */
     generate(orientation) {
-        if (!orientation) {
-            orientation = this.orientation;
-        }
-
+        if (!orientation) orientation = this.orientation;
+        
         this.table = document.createElement('table');
+        this.setCommonClass();
 
         if (this.attributes) {
             var self = this;

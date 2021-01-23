@@ -17,34 +17,27 @@
             orientation: 'horizontal',
             parent: '#container',
             title: 'A weird test',
-            titlePos: 'top',
+            titlePos: 'top'
         });
 
-        var i = document.createElement("i");
-        i.setAttribute("title", "bonjour");
-        i.innerHTML = "nothing";
-
         cells = [
-            table.generateLine({
-                startsWith: new MainCell("Random int"),
-                inLine: function(i) { return new RandomCell(0, 9); },
-                cellsToGenerate: 4,
-                endsWith: new Cell("T"),
-            }),
             [
-                new MainCell(i),
-                new Cell("0"),
-                new Cell("0"),
-                new Cell("0"),
-                new Cell("0"),
-                new Cell("{#0-1 + #0-2 + #0-3 + #0-4}")
-            ]
+                new MainCell("Random int", {colspan: 4}),
+                new MainCell("Total"),
+            ],
+            table.generateLine({
+                cellsToGenerate: 4,
+                inLine: function(i) {
+                    return new RandomCell(0, 9);
+                },
+                endsWith: new MainCell("{}")
+            })
         ];
 
-        console.log(cells);
-
-        table.setCells(cells, 6);
+        table.setCells(cells, 5);
         table.generate();
+
+        console.log(table.getCells());
     </script>
 </body>
 </html>
