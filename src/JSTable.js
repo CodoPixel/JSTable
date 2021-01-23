@@ -4,11 +4,12 @@
 class PartOfTable {
     /**
      * The cell of a table.
-     * @param {string} text The text to be contained in the cell.
+     * @param {string|HTMLElement} content The content to be displayed in the cell.
      * @param {Array<Object<string>>} options Options you can add to the cell.
      */
-    constructor(text, options) {
-        this.text = text;
+    constructor(content, options) {
+        this.isElement = content instanceof HTMLElement;
+        this.content = content;
 
         if (!options) options = {};
         this.rowspan = options.rowspan || 1;
@@ -19,6 +20,9 @@ class PartOfTable {
         this.allowInterpretation = true;
     }
 
+    /**
+     * When you change the orientation of a table, then the rowspan becomes colspan & colspan becomes rowspan.
+     */
     invertRowspanAndColspan() {
         try {
             [this.rowspan, this.colspan] = [this.colspan, this.rowspan];
@@ -31,14 +35,54 @@ class PartOfTable {
         }
     }
 
-    getText() { return this.text; }
+    /**
+     * @returns {boolean} true if the content inside the cell is a HTMLElement.
+     */
+    isHTMLElement() { return this.isElement; }
+
+    /**
+     * @returns {string} The content displayed inside the cell.
+     */
+    getContent() { return this.content; }
+
+    /**
+     * @returns {number} The rowspan value.
+     */
     getRowspan() { return this.rowspan; }
+
+    /**
+     * @returns {number} The colspan value.
+     */
     getColspan() { return this.colspan; }
+
+    /**
+     * @returns {string} The scope of the cell.
+     */
     getScope() { return this.scope; }
+    
+    /**
+     * @returns {string} The id of the cell.
+     */
     getID() { return this.id; }
+
+    /**
+     * @returns {string} The classes of the cell. Separate the different classes with white spaces.
+     */
     getClassname() { return this.classname; }
+
+    /**
+     * @returns {boolean} Is JSTable allowed to interpret the code inside the cell ?
+     */
     isAllowedToInterpret() { return this.allowInterpretation; }
+
+    /**
+     * Disables the interpretation of the codes contained in the cell.
+     */
     disableInterpretation() { this.allowInterpretation = false; }
+
+    /**
+     * Enables the interpretation of the codes contained in the cell.
+     */
     enableInterpretation() { this.allowInterpretation = true; }
 }
 
@@ -48,7 +92,7 @@ class PartOfTable {
 class Cell extends PartOfTable {
     /**
      * A Cell will be, in HTML, a `<td>`.
-     * @param {string} text The text to be contained in the cell.
+     * @param {string|HTMLElement} text The text to be contained in the cell.
      * @param {Array<Object<string>>} options Options you can add to the cell.
      */
     constructor(text, options) {
@@ -62,7 +106,7 @@ class Cell extends PartOfTable {
 class MainCell extends PartOfTable {
     /**
      * A MainCell will be, in HTML, a `<th>`.
-     * @param {string} text The text to be contained in the cell.
+     * @param {string|HTMLElement} text The text to be contained in the cell.
      * @param {Array<Object<string>>} options Options you can add to the cell.
      */
     constructor(text, options) {
@@ -93,24 +137,31 @@ class RandomCell extends PartOfTable {
 
         super("", options);
 
-        this.min = Math.ceil(min) || 0;
-        this.max = Math.floor(max) || 1;
-        this.number = this.getRandomIntInclusive();
-        
+        this.number = this.getRandomIntInclusive(min, max);
         this.text = this.number.toString();
     }
 
     /**
+     * @param {number} min The minimum random number (included).
+     * @param {number} max The maximum random number (included).
      * @returns {number} A random number between `min` (included) & `man` (included).
      */
-    getRandomIntInclusive() {
-        return Math.floor(Math.random() * (this.max - this.min + 1)) + this.min;
+    getRandomIntInclusive(min, max) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
     /**
-     * Get the generated random number during the creation of the cell.
+     * @returns {number} Get the generated random number during the creation of the cell.
      */
-    getNumber() { return this.number; }
+    getGeneratedRandomNumber() { return this.number; }
+
+    /**
+     * Set the random number that the cell has to contain.
+     * @param {number} number The random number to be displayed.
+     */
+    setRandomNumber(number) { this.number = number || 0; }
 }
 
 /**
@@ -132,7 +183,7 @@ class JSTable {
      * @param {string} orientation The orientation of the table: 'vertical' or 'horizontal' (by default).
      * @param {Array<Array<PartOfTable|BreakPointCell>>} cells An array that contains all the cells of the table.
      * @param {Array<Object>} attributes An array in which you can define some attributes to add to the generated table.
-     * @param {number} cellsPerLine The number of cells per line.
+     * @param {number} cellsPerLine The number of cells per line. Useless for horizontal tables.
      */
     constructor({parent, title, titlePos, orientation, cells, attributes, cellsPerLine}) {
         this.parent = document.querySelector(parent) || document.body;
@@ -205,11 +256,17 @@ class JSTable {
         var htmlCell = document.createElement('td');
         if (cell instanceof MainCell) htmlCell = document.createElement('th');
 
-        if (cell.isAllowedToInterpret) {
-            htmlCell.innerHTML = this.interpret(cell.getText());
+        if (cell.isAllowedToInterpret() && !cell.isHTMLElement()) {
+            htmlCell.innerHTML = this.interpret(cell.getContent());
         } else {
-            htmlCell.innerHTML = cell.getText();
+            if (cell.isHTMLElement()) {
+                htmlCell.appendChild(cell.getContent());
+            } else {
+                htmlCell.innerHTML = cell.getContent();
+            }
         }
+        
+
         htmlCell.setAttribute('rowspan', cell.getRowspan());
         htmlCell.setAttribute('colspan', cell.getColspan());
         htmlCell.setAttribute('scope', cell.getScope());
@@ -250,17 +307,18 @@ class JSTable {
      * @param {PartOfTable} startsWith The beginning of the line (optional)
      * @param {Function} inLine The cells to be generated inside the line
      * @param {PartOfTable} endsWith The end of the line (optional);
+     * @param {number} cellsToGenerate The number of cells that has to be generated.
      * @returns {Array<PartOfTable>} The generated line which contained cells
      */
-    generateLine({startsWith, inLine, endsWith}) {
+    generateLine({startsWith, inLine, cellsToGenerate, endsWith}) {
         var line = [];
-        if (startsWith) line[0] = startsWith; 
+        if (startsWith) line[0] = startsWith;
 
-        if (!this.cellsPerLine) {
+        if (!cellsToGenerate) {
             throw new Error("You must define a number of cells per line if you want to use 'generateLine()'.");
         }
 
-        for (var i = 0; i < this.cellsPerLine; i++) {
+        for (var i = 0; i < cellsToGenerate; i++) {
             line[line.length] = inLine(i);
         }
         
@@ -296,11 +354,20 @@ class JSTable {
         }
     }
 
+    /**
+     * We read the content in order to get all the sequences to interpret.
+     * @param {string} content The content of a cell.
+     * @returns {Array<string>} The sequences.
+     */
     _getSequencesFrom(content) {
         var sequenceRegex = /\{[\D\d][^}]{1,}/gmi;
         return content.match(sequenceRegex);
     }
 
+    /**
+     * Read the content of a cell in order to interpret it.
+     * @param {string} content The content of a cell.
+     */
     interpret(content) {
         if (/#[0-9]{1,}-[0-9]{1,}/gmi.test(content)) {
             var allSequences = this._getSequencesFrom(content);

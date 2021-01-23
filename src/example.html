@@ -13,66 +13,37 @@
 
     <script src="JSTable.js"></script>
     <script>
-        // var table = new JSTable({
-        //     orientation: 'horizontal',
-        //     parent: '#container',
-        //     title: 'A weird test',
-        //     titlePos: 'top',
-        //     cellsPerLine: 4,
-        // });
-
-        // // TODO : startsWith & endsWith must be arrays in order to add several cells at the same time
-
-        // cells = [
-        //     table.generateLine({
-        //         startsWith: new MainCell("Random int"),
-        //         inLine: function(i) { return new RandomCell(0, 9); },
-        //         endsWith: new Cell("T"),
-        //     }),
-        //     [
-        //         new MainCell("Sum"),
-        //         new Cell("0"),
-        //         new Cell("0"),
-        //         new Cell("0"),
-        //         new Cell("0"),
-        //         new Cell("Total = {#0-1 + #0-2 + #0-3 + #0-4} & {#0-1 / #0-2}")
-        //         // new Cell("Total = {#0-1 + #0-2 + #0-3 + #0-4} & {#0-1 / #0-2}")
-        //     ]
-        // ];
-
-        // console.log(cells);
-
-        // table.setCells(cells, 4);
-        // table.generate();
-
         var table = new JSTable({
             orientation: 'horizontal',
             parent: '#container',
             title: 'A weird test',
             titlePos: 'top',
-            cellsPerLine: 4,
-            cells: [
-                [
-                    new Cell(""),
-                    new MainCell("Age"),
-                    new MainCell("City"),
-                    new MainCell("Sex")
-                ],
-                [
-                    new MainCell("Thomas"),
-                    new Cell("No data", {rowspan: 2}),
-                    new Cell("Halluin"),
-                    new Cell("Male"),
-                ],
-                [
-                    new MainCell("Sarah"),
-                    new BreakPointCell(),
-                    new Cell("Halluin"),
-                    new Cell("Female"),
-                ]
-            ]
         });
 
+        var i = document.createElement("i");
+        i.setAttribute("title", "bonjour");
+        i.innerHTML = "nothing";
+
+        cells = [
+            table.generateLine({
+                startsWith: new MainCell("Random int"),
+                inLine: function(i) { return new RandomCell(0, 9); },
+                cellsToGenerate: 4,
+                endsWith: new Cell("T"),
+            }),
+            [
+                new MainCell(i),
+                new Cell("0"),
+                new Cell("0"),
+                new Cell("0"),
+                new Cell("0"),
+                new Cell("{#0-1 + #0-2 + #0-3 + #0-4}")
+            ]
+        ];
+
+        console.log(cells);
+
+        table.setCells(cells, 6);
         table.generate();
     </script>
 </body>
