@@ -1,6 +1,6 @@
 # JSTable
 
-Creates a table using Javascript.
+A complete tool to make the most of HTML tables in Javascript.
 
 ## Get started
 
