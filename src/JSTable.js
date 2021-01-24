@@ -46,6 +46,12 @@ class PartOfTable {
     getContent() { return this.content; }
 
     /**
+     * Sets the content of your cell.
+     * @param {string|HTMLElement} content Content to be added to your cell.
+     */
+    setContent(content) { this.content = content; }
+
+    /**
      * @returns {number} The rowspan value.
      */
     getRowspan() { return this.rowspan; }
@@ -83,7 +89,7 @@ class PartOfTable {
     }
 
     /**
-     * @returns {boolean} Is JSTable allowed to interpret the code inside the cell ?
+     * @returns {boolean} Is JSTable allowed to interpret the code inside the cell?
      */
     isAllowedToInterpret() { return this.allowInterpretation; }
 
@@ -104,11 +110,11 @@ class PartOfTable {
 class Cell extends PartOfTable {
     /**
      * A Cell will be, in HTML, a `<td>`.
-     * @param {string|HTMLElement} text The text to be contained in the cell.
+     * @param {string|HTMLElement} content The content to be displayed in the cell.
      * @param {Array<Object<string>>} options Options you can add to the cell.
      */
-    constructor(text, options) {
-        super(text, options);
+    constructor(content, options) {
+        super(content, options);
     }
 }
 
@@ -118,11 +124,11 @@ class Cell extends PartOfTable {
 class MainCell extends PartOfTable {
     /**
      * A MainCell will be, in HTML, a `<th>`.
-     * @param {string|HTMLElement} text The text to be contained in the cell.
+     * @param {string|HTMLElement} content The content to be displayed in the cell.
      * @param {Array<Object<string>>} options Options you can add to the cell.
      */
-    constructor(text, options) {
-        super(text, options);
+    constructor(content, options) {
+        super(content, options);
     }
 }
 
@@ -132,8 +138,8 @@ class MainCell extends PartOfTable {
 class RandomCell extends PartOfTable {
     /**
      * Generates a cell with a random number in it and to each cell, we add a specific class: 'cell-random'.
-     * @param {number} min The minimum random number
-     * @param {number} max The maximum random number
+     * @param {number} min The minimum random number (included).
+     * @param {number} max The maximum random number (included).
      * @param {Array<Object<String>>} options Options you can add to the cell.
      */
     constructor(min, max, options) {
@@ -149,6 +155,12 @@ class RandomCell extends PartOfTable {
 
         super("", options);
 
+        if (min === null || min === undefined || max === null || max === undefined) {
+            throw new Error("A RandomCell() doesn't have a minimum or a maximum value.");
+        }
+
+        this.min = min;
+        this.max = max;
         this.number = this.getRandomIntInclusive(min, max);
         this.content = this.number.toString();
     }
@@ -174,6 +186,18 @@ class RandomCell extends PartOfTable {
      * @param {number} number The random number to be displayed.
      */
     setRandomNumber(number) { this.number = number || 0; }
+
+    /**
+     * Generates a new random integer between `min` (included) & `max` (included).
+     * @param {number} min The minimum random number (included).
+     * @param {number} max The maximum random number (included).
+     */
+    generateNewRandomNumber(min, max) {
+        if (min === null || min === undefined) min = this.min;
+        if (max === null || max === undefined) max = this.max;
+        this.number = this.getRandomIntInclusive(min, max);
+        this.content = this.number.toString();
+    }
 }
 
 /**
@@ -183,10 +207,291 @@ class BreakPointCell {
     constructor() {}
 }
 
+class TableManager {
+    constructor(table) {
+        this.currentTable = this.setCurrentTable(table);
+    }
+
+    setCurrentTable(table) { this.table = table; }
+    getCurrentTable() { return this.table; }
+
+    /**
+     * Select a cell in a table.
+     * @param {string} identifier The identifier of the wanted cell.
+     * @param {HTMLTableElement} table The table whose cell you want to select.
+     * @returns {HTMLTableCellElement} The wanted cell.
+     */
+    selectCell(identifier, table) {
+        if (!table) {
+            if (!this.getCurrentTable()) {
+                throw new Error("selectCell(): no table defined.");
+            } else {
+                table = this.getCurrentTable();
+            }
+        }
+
+        if (!/#\d?-\d?/gmi.test(identifier)) throw new Error("selectCell(): unable to read the identifier.");
+
+        var lineNumber = identifier.match(/\d{1,}/gm)[0];
+        var cellNumber = identifier.match(/\d{1,}/gm)[1];
+
+        var allLines = table.querySelectorAll('tr');
+        if (!allLines[lineNumber]) {
+            console.error("selectCell(): unable to find the content of the cell. The line doesn't exist.");
+            return '';
+        }
+
+        try {
+            var cell = allLines[lineNumber].childNodes[cellNumber];
+            return cell;
+        } catch (e) {
+            console.error("selectCell(): unable to read the content of the cell. The cell doesn't exist.");
+            return null;
+        }
+    }
+
+    /**
+     * Select all the cells in a table at a specific line, from a starting point to an ending point: 'r-s:e'.
+     * @param {string} identifier The identifier of the wanted cell.
+     * @param {HTMLTableElement} table The table whose cell you want to select.
+     * @returns {Array<HTMLTableCellElement>} The wanted cells.
+     */
+    selectMultipleCells(identifier, table) {
+        if (!table) {
+            if (!this.getCurrentTable()) {
+                throw new Error("selectMultipleCells(): no table defined.");
+            } else {
+                table = this.getCurrentTable();
+            }
+        }
+
+        if (!/#\d?-\d?:\d/gmi.test(identifier)) throw new Error("selectMultipleCells(): unable to read the identifier.");
+
+        // the line number
+        var line = identifier.match(/\d{1,}/gm)[0];
+
+        // the cells number
+        identifier.replace(/(\d{1,}):(\d{1,})/gm, '$1, $2');
+        var startingPoint = parseInt(RegExp.$1);
+        var endingPoint = parseInt(RegExp.$2);
+
+        var cells = [];
+        if (startingPoint < endingPoint) {
+            for (var i = startingPoint; i <= endingPoint; i++) {
+                var selectedCell = this.selectCell("#" + line + "-" + i);
+                if (selectedCell) {
+                    cells[cells.length] = selectedCell;
+                } else {
+                    break;
+                }
+            }
+        } else if (startingPoint > endingPoint) {
+            for (var i = endingPoint; i <= startingPoint; i++) {
+                var selectedCell = this.selectCell("#" + line + "-" + i);
+                if (selectedCell) {
+                    cells[cells.length] = selectedCell;
+                } else {
+                    break;
+                }
+            }
+        } else {
+            return this.selectCell("#" + line + "-" + startingPoint);
+        }
+
+        return cells;
+    }
+
+    /**
+     * We read the content in order to get all the sequences to interpret.
+     * @param {string} content A string that contains identifiers.
+     * @returns {Array<string>} The sequences.
+     */
+    getSequencesFrom(content) { return content.match(/\{(.*?)\}/gmi); }
+
+    /**
+     * Read the content of a cell in order to interpret it.
+     * @param {string} content The content of a cell.
+     */
+    interpret(content, table) {
+        if (!table) {
+            if (!this.getCurrentTable()) {
+                throw new Error("interpret(): no table defined.");
+            } else {
+                table = this.getCurrentTable();
+            }
+        }
+
+        var newContent = content;
+
+        // Read the sequence
+        var allSequences = this.getSequencesFrom(content);
+        if (!allSequences || !Array.isArray(allSequences)) { return content; }
+
+        for (var sequence of allSequences) {
+            var identifiers = sequence.match(/#[0-9]{1,}-[0-9]{1,}/gmi);
+            if (identifiers) {
+                for (var identifier of identifiers) {
+                    newContent = newContent.replace(new RegExp(identifier, "g"), this.selectCell(identifier).innerHTML);
+                }
+            } else {
+                return content;
+            }
+        }
+
+        try {
+            // Interpret the sequence
+            allSequences = this.getSequencesFrom(newContent);
+            for (var sequence of allSequences) {
+                var evaluatedContent = eval(sequence.replace(/\{|\}/gm, ""));
+                newContent = newContent.replace(sequence, evaluatedContent.toString());
+            }
+
+            return newContent;
+        } catch(e) {
+            console.info("Unable to evaluate the content inside the cell while interpreting it.");
+            return newContent.replace(/\{|\}/gm, "");
+        }
+    }
+
+    /**
+     * Permanently deletes a table.
+     * @param {HTMLTableElement} table The table to delete.
+     */
+    deleteTable(table) {
+        if (!table) {
+            if (!this.getCurrentTable()) {
+                throw new Error("deleteTable(): no table defined.");
+            } else {
+                table = this.getCurrentTable();
+            }
+        }
+
+        while (table.firstChild) {
+            table.removeChild(table.firstChild);
+        }
+
+        table.style.display="none";
+    }
+
+    /**
+     * Clear the content of a cell.
+     * @param {string} identifier The identifier of the wanted cell.
+     * @param {HTMLTableElement} table The table whose cell you want to select.
+     */
+    clearCell(identifier, table) {
+        if (!table) {
+            if (!this.getCurrentTable()) {
+                throw new Error("clearCell(): no table defined.");
+            } else {
+                table = this.getCurrentTable();
+            }
+        }
+
+        var selectedCell = this.selectCell(identifier);
+        selectedCell.innerHTML = "";
+    }
+
+    /**
+     * Generates a line to be added to a table.
+     * @param {HTMLTableElement} table The table in which you want to add a new line.
+     * @param {PartOfTable} startsWith The beginning of the line (optional).
+     * @param {Function} inLine The cells to be generated inside the line.
+     * @param {PartOfTable} endsWith The end of the line (optional).
+     * @param {number} cellsToGenerate The number of cells that has to be generated. By default 1.
+     * @returns {Array<PartOfTable>} The generated line.
+     */
+    generateLine(options) {
+        if (!options) return;
+
+        var startsWith = options.startsWith;
+        var endsWith = options.endsWith;
+        var inLine = options.inLine;
+        var cellsToGenerate = options.cellsToGenerate || 1;
+
+        var line = [];
+        if (startsWith) line[0] = startsWith;
+
+        try {
+            for (var i = 0; i < cellsToGenerate; i++) {
+                line[line.length] = inLine(i);
+            }
+        } catch(e) {
+            throw new Error("generateLine(): cannot execute the function from the inLine parameter.");
+        }
+        
+        if (endsWith) line[line.length] = endsWith;
+        return line;
+    }
+
+    /**
+     * Generates a `<td>` or a `<th>` to put in the table.
+     * @param {PartOfTable} cell A cell to put in the table.
+     * @param {HTMLTableElement} table The table in which you want to interpret (if needed).
+     * @returns {HTMLTableDataCellElement} A new cell for the table.
+     */
+    generateCell(cell, table) {
+        if (!table) {
+            if (!this.getCurrentTable()) {
+                throw new Error("generateCell(): no table defined.");
+            } else {
+                table = this.getCurrentTable();
+            }
+        }
+
+        var htmlCell = document.createElement('td');
+        if (cell instanceof MainCell) htmlCell = document.createElement('th');
+
+        if (cell.isAllowedToInterpret() && !cell.isHTMLElement()) {
+            htmlCell.innerHTML = this.interpret(cell.getContent(), table);
+        } else {
+            if (cell.isHTMLElement()) {
+                htmlCell.appendChild(cell.getContent());
+            } else {
+                htmlCell.innerHTML = cell.getContent();
+            }
+        }
+
+        htmlCell.setAttribute('rowspan', cell.getRowspan());
+        htmlCell.setAttribute('colspan', cell.getColspan());
+        htmlCell.setAttribute('scope', cell.getScope());
+        htmlCell.setAttribute('id', cell.getID());
+        if (cell.getClassname()) {
+            var classes = cell.getClassname().trim().split(' ');
+            classes.forEach(function(clas) {
+                htmlCell.classList.add(clas);
+            });
+        }
+        return htmlCell;
+    }
+
+    /**
+     * Adds a line in a table.
+     * @param {Array<PartOfTable|BreakPointCell>} line A line to be added to the table.
+     * @param {HTMLTableElement} table The table in which you want to add a line.
+     */
+    addLine(line, table) {
+        if (!table) {
+            if (!this.getCurrentTable()) {
+                throw new Error("addLine(): no table defined.");
+            } else {
+                table = this.getCurrentTable();
+            }
+        }
+
+        var tr = document.createElement('tr');
+        for (var cell of line) {
+            if (cell instanceof BreakPointCell) continue;
+            tr.appendChild(this.generateCell(cell));
+        }
+
+        table.appendChild(tr);
+    }
+}
+
 /**
  * Thanks to JSTable, you can create a table using Javascript.
  */
-class JSTable {
+class JSTable extends TableManager {
     /**
      * Defines the primary requirements for JSTable to generate a table.
      * @param {string} parent The query selector of the parent in which to put the generated table.
@@ -196,8 +501,11 @@ class JSTable {
      * @param {Array<Array<PartOfTable|BreakPointCell>>} cells An array that contains all the cells of the table.
      * @param {Array<Object>} attributes An array in which you can define some attributes to add to the generated table.
      * @param {number} cellsPerLine The number of cells per line. Useless for horizontal tables.
+     * @param {string} commonClass Classes common to all cells.
      */
     constructor({parent, title, titlePos, orientation, cells, attributes, cellsPerLine, commonClass}) {
+        super(null);
+
         this.parent = document.querySelector(parent) || document.body;
         this.title = title || '';
         this.titlePos = titlePos || 'top';
@@ -262,6 +570,7 @@ class JSTable {
      * Set the cells that the table will contain.
      * @param {Array<Array<PartOfTable|BreakPointCell>>} cells An array that contains all the cells of the table. By default an empty array.
      * @param {number} cellsPerLine The number of cells per line.
+     * @param {string} commonClass Classes common to each cell. Separate the classes with a white space.
      */
     setCells(cells, cellsPerLine, commonClass) {
         this.cellsPerLine = cellsPerLine;
@@ -277,48 +586,6 @@ class JSTable {
      */
     getCells() {
         return this.cells;
-    }
-
-    /**
-     * Generates the `<caption>` of the table.
-     */
-    _genCaption() {
-        var caption = document.createElement('caption');
-        caption.innerHTML = this.title || '';
-        caption.style.captionSide = this.titlePos;
-        this.table.appendChild(caption);
-    }
-
-    /**
-     * Generates a `<td>` or a `<th>` to put in the table.
-     * @param {PartOfTable} cell A cell to put in the table.
-     * @returns {HTMLTableDataCellElement} A new cell for the table.
-     */
-    _genCell(cell) {
-        var htmlCell = document.createElement('td');
-        if (cell instanceof MainCell) htmlCell = document.createElement('th');
-
-        if (cell.isAllowedToInterpret() && !cell.isHTMLElement()) {
-            htmlCell.innerHTML = this.interpret(cell.getContent());
-        } else {
-            if (cell.isHTMLElement()) {
-                htmlCell.appendChild(cell.getContent());
-            } else {
-                htmlCell.innerHTML = cell.getContent();
-            }
-        }
-
-        htmlCell.setAttribute('rowspan', cell.getRowspan());
-        htmlCell.setAttribute('colspan', cell.getColspan());
-        htmlCell.setAttribute('scope', cell.getScope());
-        htmlCell.setAttribute('id', cell.getID());
-        if (cell.getClassname()) {
-            var classes = cell.getClassname().trim().split(' ');
-            classes.forEach(function(clas) {
-                htmlCell.classList.add(clas);
-            });
-        }
-        return htmlCell;
     }
 
     /**
@@ -344,109 +611,6 @@ class JSTable {
     }
 
     /**
-     * Generates duplicated cells inside a same line.
-     * @param {PartOfTable} startsWith The beginning of the line (optional)
-     * @param {Function} inLine The cells to be generated inside the line
-     * @param {PartOfTable} endsWith The end of the line (optional);
-     * @param {number} cellsToGenerate The number of cells that has to be generated.
-     * @returns {Array<PartOfTable>} The generated line which contained cells
-     */
-    generateLine({startsWith, inLine, cellsToGenerate, endsWith}) {
-        var line = [];
-        if (startsWith) line[0] = startsWith;
-
-        if (!cellsToGenerate) {
-            throw new Error("You must define a number of cells per line if you want to use 'generateLine()'.");
-        }
-
-        try {
-            for (var i = 0; i < cellsToGenerate; i++) {
-                line[line.length] = inLine(i);
-            }
-        } catch(e) {
-            throw new Error("JSTable generateLine(): cannot execute the function from the inLine parameter.");
-        }
-        
-        if (endsWith) line[line.length] = endsWith;
-        return line;
-    }
-
-    /**
-     * Gets the content of a cell from `table`.
-     * @param {string} identifier `#r-d` => `r` is the line number, `d` is the cell number. *The numbers begin at 0*. You cannot get the contents of a cell if it is in the same line when creating that same line.
-     * @param {HTMLTableElement} table The table in which you want to read the contents of the cell.
-     * @returns {string} The content of the cell. Returns an empty string if the cell is not found.
-     */
-    readCell(identifier, table) {
-        if (!table) table = this.table;
-        if (!/#[0-9]{1,}-[0-9]{1,}/gmi.test(identifier)) return '';
-
-        var line = identifier.match(/[0-9]{1,}/gm)[0];
-        var cell = identifier.match(/[0-9]{1,}/gm)[1];
-
-        var allTr = table.querySelectorAll('tr');
-        if (!allTr[line]) {
-            console.error("readCell(): unable to find the content of the cell. The line doesn't exist.");
-            return '';
-        }
-        
-        try {
-            var content = allTr[line].childNodes[cell].innerHTML;
-            return content;
-        } catch (e) {
-            console.error("readCell(): unable to interpret the content of the cell. The cell doesn't exist.");
-            return '';
-        }
-    }
-
-    /**
-     * We read the content in order to get all the sequences to interpret.
-     * @param {string} content The content of a cell.
-     * @returns {Array<string>} The sequences.
-     */
-    _getSequencesFrom(content) {
-        var sequenceRegex = /\{[\D\d][^}]{1,}/gmi;
-        return content.match(sequenceRegex);
-    }
-
-    /**
-     * Read the content of a cell in order to interpret it.
-     * @param {string} content The content of a cell.
-     */
-    interpret(content) {
-        if (/#[0-9]{1,}-[0-9]{1,}/gmi.test(content)) {
-            var allSequences = this._getSequencesFrom(content);
-            var newContent = content;
-            var self = this;
-
-            // First of call, replace the symbols "#r-l" by their content.
-            allSequences.forEach(function(sequence) {
-                var allCalls = sequence.match(/#[0-9]{1,}-[0-9]{1,}/gmi);
-                for (var call of allCalls) {
-                    newContent = newContent.replace(new RegExp(call, "g"), self.readCell(call, self.table));
-                }
-            });
-
-            try {
-                // Do the calculations inside the content
-                this._getSequencesFrom(newContent).forEach(function(sequence) {
-                    var evaluatedContent = eval(sequence.replace(/\{|\}/gm, ""));
-                    newContent = newContent.replace(sequence, evaluatedContent.toString());
-                });
-                // Replace these brackets
-                newContent = newContent.replace(/\{|\}/gm, "");
-
-                return newContent;
-            } catch(e) {
-                console.info("Unable to evaluate the content inside the cell while interpreting it.");
-                return content;
-            }
-        } else {
-            return content;
-        }
-    }
-
-    /**
      * Generates the table according to its orientation.
      * @param {string} orientation The orientation of the table.
      */
@@ -455,6 +619,13 @@ class JSTable {
         
         this.table = document.createElement('table');
         this.setCommonClass();
+       
+        // Create the title
+        var caption = document.createElement('caption');
+        caption.innerHTML = this.title || '';
+        caption.style.captionSide = this.titlePos;
+
+        this.table.appendChild(caption);
 
         if (this.attributes) {
             var self = this;
@@ -468,10 +639,9 @@ class JSTable {
 
         for (var line of cells) {
             var tr = document.createElement('tr');
-            // TODO: we must be able to interpret the content of the same line while the creating this line.
             for (var cell of line) {
                 if (cell instanceof BreakPointCell) continue;
-                tr.appendChild(this._genCell(cell));
+                tr.appendChild(this.generateCell(cell, this.table));
             }
             this.table.appendChild(tr);
         }

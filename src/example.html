@@ -16,7 +16,7 @@
         var table = new JSTable({
             orientation: 'horizontal',
             parent: '#container',
-            title: 'A weird test',
+            title: 'Maths in a table',
             titlePos: 'top'
         });
 
@@ -30,14 +30,36 @@
                 inLine: function(i) {
                     return new RandomCell(0, 9);
                 },
-                endsWith: new MainCell("{}")
+                endsWith: new MainCell("")
             })
         ];
 
         table.setCells(cells, 5);
         table.generate();
 
-        console.log(table.getCells());
+        // TableManager():
+
+        var manager = new TableManager();
+        manager.setCurrentTable(table.getTable());
+
+        function sum(cells) {
+            var S = 0;
+            for (var cell of cells) {
+                S += parseInt(cell.innerHTML);
+            }
+            return S;
+        }
+
+        var totalCell = manager.selectCell("#1-4");
+        totalCell.innerHTML = sum(manager.selectMultipleCells("#1-0:3"));
+        // This line above is strictly equal to:
+        // totalCell.innerHTML = manager.interpret("{#1-0 + #1-1 + #1-2 + #1-3}");
+
+        // manager.addLine(manager.generateLine({
+        //     cellsToGenerate: 5,
+        //     inLine: (i) => new Cell(i.toString())
+        // }));
+
     </script>
 </body>
 </html>
