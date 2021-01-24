@@ -1,3 +1,15 @@
+## [2.0.0] - January 23, 2021
+
+Big changes and new features:
+
++ RandomCell(): generate a random integer inside the cell.
++ TableManager(): do what you want with tables...
++ Create your own cell type
++ *Interpretation*: you can select certain cells in order to get their contents and do mathematics with.
++ You can put a HTML element as the content of a cell.
++ You can define a class common to each cell.
++ Better documentation within the source code.
+
 ## [1.1.0] - January 20, 2021
 
 Minor changes:
