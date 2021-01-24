@@ -1,4 +1,4 @@
-## [2.0.0] - January 23, 2021
+## [2.0.0] - January 24, 2021
 
 Big changes and new features:
 
