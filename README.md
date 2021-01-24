@@ -76,7 +76,7 @@ To go further, you also have some methods from JSTable (which extends from `Tabl
 |`getOrientation()`|Gets the orientation of the table.|
 |`setOrientation()`|Sets the orientation of the table: 'vertical' or 'horizontal' (by default).|
 |`generate(orientation?: string)`|Generates the table according to the orientation. If you set an orientation using this method, then this orientation will be chosen rather than the default one given via JSTable instantiation.|
-|`setCells(cells: Array<Array<PartOfTable|BreakPointCell>>, cellsPerLine: number, commonClass?: string)`|Set the cells that the table will contain.|
+|`setCells(cells: Array<Array<PartOfTable\|BreakPointCell>>, cellsPerLine: number, commonClass?: string)`|Set the cells that the table will contain.|
 |`getCells()`|Get the cells contained in the table.|
 |`getTable()`|Returns the generated table. Returns `null` if the table does not yet exist.|
 |`setCommonClass(commonClass: string)`|Set classes common to all cells. Separate the classes with white spaces.|
