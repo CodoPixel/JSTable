@@ -66,7 +66,7 @@ JSTable takes only one argument: an object. However, inside this object, you can
 |orientation|string|'horizontal'|The orientation of the table: 'vertical' or 'horizontal'.|
 |cells|`Array<Array<PartOfTable\|BreakPointCell>>`|_empty array_|An array that contains all the cells of the table.|
 |attributes|`Array<Object>`|_empty array_|An array in which you can define some attributes to be added to the generated table.|
-|cellsPerLine|number|The number of cells in the first line|The number of cells per line|
+|cellsPerLine|number|The number of cells in the first line|The number of cells per line.|
 |commonClass|string|_none_|The classes to add to each cell. Separate the classes with white spaces.|
 
 To go further, you also have some methods from JSTable (which extends from `TableManager`) :
@@ -81,7 +81,7 @@ To go further, you also have some methods from JSTable (which extends from `Tabl
 |`getTable()`|Returns the generated table. Returns `null` if the table does not yet exist.|
 |`setCommonClass(commonClass: string)`|Set classes common to all cells. Separate the classes with white spaces.|
 
-The first two methods are there, but you should not have to use them. The last two methods are used for interpretation.
+The first two methods are there, but you should not have to use them.
 
 ## Cells
 
@@ -118,7 +118,7 @@ From each cell, you have some basic methods:
 
 ## BreakPointCell()
 
-Each line (in `cells`) must have the same number of cells as the first line Therefore, you can put fake cells with `BreakPointCell()` instead of a classic cell. This is useful if you want to use `rowspan` or `colspan`. Just like this:
+Each line (in `cells`) must have the same number of cells as the first line. Therefore, you can put fake cells with `BreakPointCell()` instead of a classic cell. This is useful if you want to use `rowspan` or `colspan`. Just like this:
 
 ```
 var table = new JSTable({
@@ -218,12 +218,16 @@ With `TableManager`, you can do a lot of things, like interpreting the content o
 In order to select a single cell, you have to use a specific syntax: `#r-d`, where `r` is the line number and `d` is the cell number. For instance, if I want to select the first cell of the second line, I'll write: '#1-0'. Indeed, we start counting at 0. So the first line is 0, then 1 etc. same for cell number.
 
 ```
+var table = document.getElementById("mytable");
+var manager = new TableManager(table);
 var cell = manager.selectCell("#1-0");
 ```
 
 However, you can select multiple cells via `selectMultipleCells()` (only). For that, you have to define a specific line, then write the starting point (included) and the ending point (included). For example, if I want to select the first 4 cells on the first line of my table, then I'll write: '#0-0:3'. Indeed, the first line is 0, and I want the cells number 0, 1, 2, 3 (the first 4).
 
 ```
+var table = document.getElementById("mytable");
+var manager = new TableManager(table);
 var cells = manager.selectMultipleCells("#0-0:3"); // returns an array
 ```
 
@@ -269,8 +273,8 @@ function sum(cells) {
     return S;
 }
 
-var totalCell = manager.selectCell("#1-4"); // we select the cell that must contain the sum
-totalCell.innerHTML = sum(manager.selectMultipleCells("#1-0:3")); // 0:3 because we start counting at 0, so we select 0, 1, 2, 3
+var totalCell = manager.selectCell("#0-4"); // we select the cell that must contain the sum
+totalCell.innerHTML = sum(manager.selectMultipleCells("#0-0:3")); // 0:3 because we start counting at 0, so we select 0, 1, 2, 3
 // This line above is strictly equal to:
-// totalCell.innerHTML = manager.interpret("{#1-0 + #1-1 + #1-2 + #1-3}");
+// totalCell.innerHTML = manager.interpret("{#0-0 + #0-1 + #0-2 + #0-3}");
 ```

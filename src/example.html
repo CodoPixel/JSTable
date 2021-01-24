@@ -55,10 +55,13 @@
         // This line above is strictly equal to:
         // totalCell.innerHTML = manager.interpret("{#1-0 + #1-1 + #1-2 + #1-3}");
 
-        // manager.addLine(manager.generateLine({
-        //     cellsToGenerate: 5,
-        //     inLine: (i) => new Cell(i.toString())
-        // }));
+        // An example of `addLine()` & `generateLine()` from TableManager()
+
+        manager.addLine(manager.generateLine({
+            cellsToGenerate: 4,
+            inLine: (i) => new Cell("#2-" + i),
+            endsWith: new MainCell("{#0-1}")
+        }));
 
     </script>
 </body>
