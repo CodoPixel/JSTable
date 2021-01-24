@@ -118,7 +118,7 @@ From each cell, you have some basic methods:
 
 ## BreakPointCell()
 
-Each line (in `cells`) must have the same number of cells as the first line, otherwise an error will be thrown. In order to avoid this issue, you can put fake cells with `BreakPointCell()` instead of a classic cell. This is useful if you want to use `rowspan` or `colspan`. Just like this:
+Each line (in `cells`) must have the same number of cells as the first line Therefore, you can put fake cells with `BreakPointCell()` instead of a classic cell. This is useful if you want to use `rowspan` or `colspan`. Just like this:
 
 ```
 var table = new JSTable({
