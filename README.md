@@ -200,17 +200,17 @@ With `TableManager`, you can do a lot of things, like interpreting the content o
 
 |Method|Description|
 |------|-----------|
-|_constructor(table: HTMLTableElement)_|Defines the current table you are working on in order to avoid unnecessary repetition when calling up the methods.|
-|setCurrentTable(table: HTMLTableElement)|Sets the current table you are working on.|
-|getCurrentTable()|Gets the current table you are working on.|
-|selectCell(identifier: string, table?: HTMLTableElement)|Select a cell from its identifier.|
-|selectMultipleCells(identifier: string, table?: HTMLTableElement)|Select all the cells in a table at a specific line, from a starting point to an ending point.|
-|getSequencesFrom(content: string)|We read the content in order to get all the sequences to interpret.|
-|interpret(content: string, table?: HTMLTableElement)|Read the content of a cell in order to interpret it.|
-|deleteTable(table?: HTMLTableElement)|Permanently deletes a table.|
-|clearCell(identifier: string, table?: HTMLTableElement)|Clear the content of a cell.|
-|generateLine(options: {...})|Returns a line to be added to a table via `addLine()`.|
-|generateCell(cell: PartOfTable, table?: HTMLTableElement)|Generates a cell to put in the table.|
+|_`constructor(table: HTMLTableElement)`_|Defines the current table you are working on in order to avoid unnecessary repetition when calling up the methods.|
+|`setCurrentTable(table: HTMLTableElement)`|Sets the current table you are working on.|
+|`getCurrentTable()`|Gets the current table you are working on.|
+|`selectCell(identifier: string, table?: HTMLTableElement)`|Select a cell from its identifier.|
+|`selectMultipleCells(identifier: string, table?: HTMLTableElement)`|Select all the cells in a table at a specific line, from a starting point to an ending point.|
+|`getSequencesFrom(content: string)`|We read the content in order to get all the sequences to interpret.|
+|`interpret(content: string, table?: HTMLTableElement)`|Read the content of a cell in order to interpret it.|
+|`deleteTable(table?: HTMLTableElement)`|Permanently deletes a table.|
+|`clearCell(identifier: string, table?: HTMLTableElement)`|Clear the content of a cell.|
+|`generateLine(options: {...})`|Returns a line to be added to a table via `addLine()`.|
+|`generateCell(cell: PartOfTable, table?: HTMLTableElement)`|Generates a cell to put in the table.|
 |`addLine(line: Array<PartOfTable\|BreakPointCell>, table?: HTMLTableElement)`|Adds a line in a table.|
 
 ## How to select cells ?
