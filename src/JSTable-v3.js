@@ -4,7 +4,6 @@ class JSTable {
         this.functions = [
             {
                 name: 'Main',
-                arguments: 0,
                 callback: null,
                 tagName: 'th'
             }
@@ -40,32 +39,34 @@ class JSTable {
         var regex = new RegExp('<' + name + '\((.*)\)>', 'gmi');
         cell = cell.replace(', ', ',');
         cell.replace(regex, '$1');
-        return RegExp.$1.split(',');
+        return RegExp.$1.replace(/\(|\)/gm, '').split(',');
     }
 
     generateCell(cell) {
         var cellElement = document.createElement('td');
 
-        var self = this;
-        this.functions.forEach(function(func) {
-            var regex = new RegExp('<' + func.name + '\(.*\)>|<' + func.name + '>', 'gmi');
+        // this.functions cannot be null because there is already <Main>
+        for (var func of this.functions) {
+            var regex = new RegExp('<' + func.name + '\(.*\)>|<' + func.name + '>', 'gm');
+            
+            // if there is a function inside the cell
             if (regex.test(cell)) {
-                // change the tagname if needed
-                if (func.tagName) cellElement.tagName = func.tagName;
+                // change the tagname if required
+                if (func.tagName) cellElement = document.createElement(func.tagName);
 
-                // get the arguments
-                if (func.arguments > 0) {
-                    var args = self.getArgumentsFrom(func.name, cell);
-                    if (func.callback) {
-                        func.callback(args);
-                    }
+                // get the arguments if there is a callback function
+                if (func.callback) {
+                    var args = this.getArgumentsFrom(func.name, cell);
+                    cellElement.innerHTML = func.callback(args);
+                    continue;
                 }
             }
-        });
 
-        if (this.isRandomCell(cell)) cellElement = this.randomCell(cell);
+            // otherwise
+            cell = cell.replace(regex, '');
+            cellElement.innerHTML = cell;
+        }
         
-        cellElement.innerHTML = cell;
         return cellElement;
     }
 

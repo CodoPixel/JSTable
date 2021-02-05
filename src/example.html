@@ -15,7 +15,7 @@
     <script>
         var jsArray = [
             ["<Main>Nom", "<Main>Prénom"],
-            ["<Random(0, 5)>", "Gysemans"],
+            ["<Random(0, 50)>", "Gysemans"],
             ["Sarah", "Gysemans"],
             ["Stephen", "Hawking"]
         ];
@@ -23,13 +23,16 @@
         var jstable = new JSTable("container");
         jstable.addFunction({
             name: 'Random',
-            arguments: 2,
-            callback: (min, max) => {
-                min = Math.ceil(min);
-                max = Math.floor(max);
+            callback: (args) => {
+                min = Math.ceil(parseInt(args[0]));
+                max = Math.floor(parseInt(args[1]));
                 return Math.floor(Math.random() * (max - min + 1)) + min;
             }
-        })
+        });
+
+        // TODO: instead of rolspan & colspan => nothing (["No data"] instead of two strings => colspan=2)
+        // ainsi, l'élément précédent dans le tableau (la ligne)
+        // obtient donc un colspan égal au nombre d'éléments manquant après lui
 
         var htmlArray = jstable.jsArrayToHtml(jsArray);
         jstable.generate(htmlArray);
