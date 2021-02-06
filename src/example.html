@@ -14,10 +14,10 @@
     <script src="JSTable-v3.js"></script>
     <script>
         var jsArray = [
-            ["<Main>Nom", "<Main>Prénom"],
-            ["<Random(0, 50)>", "Gysemans"],
-            ["Sarah", "Gysemans"],
-            ["Stephen", "Hawking"]
+            ["<Main>Nom", "<Main>Prénom", "<Main>Age"],
+            ["Thomas", "17", "r."],
+            ["Sarah", "Gysemans", "17"],
+            ["<Random(0, 50)>", "Hawking", "71"]
         ];
 
         var jstable = new JSTable("container");
@@ -30,7 +30,7 @@
             }
         });
 
-        // TODO: instead of rolspan & colspan => nothing (["No data"] instead of two strings => colspan=2)
+        // TODO: instead of rolspan & colspan => a dot (["No data", "."] instead of two strings => colspan=2)
         // ainsi, l'élément précédent dans le tableau (la ligne)
         // obtient donc un colspan égal au nombre d'éléments manquant après lui
 
