@@ -13,20 +13,20 @@
 
     <script src="JSTable-v3.js"></script>
     <script>
-        // var jsArray = [
-        //     ["<Main>Nom", "<Main>Prénom", "<Main>Age"],
-        //     ["Gysemans.c*2", "No data.r*2", "."],
-        //     [".", "Sarah", "17"],
-        //     ["Hawking", "Stephen", "<Random(0, 70)>"]
-        // ];
-
         var jsArray = [
-            ["0", "1"],
-            ["0", "1"],
-            ["0", "1"],
-            ["0", "1"],
-            ["0", "<Random(1, 1)>"]
+            ["<Main>Nom", "<Main>Prénom", "<Main>Age"],
+            ["Gysemans.c*2", "No data.r*2", "."],
+            [".", "Sarah", "17"],
+            ["Hawking", "Stephen", "<Random(0, 70)>"]
         ];
+
+        // var jsArray = [
+        //     ["0", "1"],
+        //     ["0", "1"],
+        //     ["0", "1"],
+        //     ["0", "1"],
+        //     ["0", "<Random(1, 1)>"]
+        // ];
 
         var jstable = new JSTable("container");
         jstable.addFunction({
@@ -38,7 +38,7 @@
             },
             attributes: [['id', 'test']],
             events: [
-                ['click', (cellEvent) => console.warn(cellEvent)]
+                ['click', (cellEvent) => console.info(cellEvent)]
             ]
         });
 
@@ -51,7 +51,8 @@
         var t = document.querySelector('table');
         console.log(cell);
 
-        console.log(manager.selectMultipleCells({x1: 1, y1: 0}, {x2: 0, y2: 0}, t));
+        // console.log(manager.selectMultipleCells({x1: 1, y1: 0}, {x2: 0, y2: 0}, t));
+        console.log(jstable.htmlTableToString(t));
     </script>
 </body>
 </html>

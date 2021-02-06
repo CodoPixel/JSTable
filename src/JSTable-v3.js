@@ -278,15 +278,6 @@ class TableManager {
 
         table.style.display="none";
     }
-
-    /**
-     * Delete a row from a table.
-     * @param {number} y The number of the row (starting from 0).
-     * @param {HTMLTableElement} table The table in which you want to delete a row.
-     */
-    removeRow(y, table) {
-        table.deleteRow(y);
-    }
 }
 
 /**
@@ -360,6 +351,13 @@ class JSTable extends TableManager {
         return RegExp.$1.replace(/\(|\)/gm, '').split(',');
     }
 
+    /**
+     * Generates a cell to put inside a future HTML table. The custom functions inside the content are executed.
+     * @param {string} cell The content of a cell.
+     * @param {number} colspan The colspan value.
+     * @param {number} rowspan The rowspan value.
+     * @returns {HTMLTableDataCellElement} The generated cell.
+     */
     generateCell(cell, colspan, rowspan) {
         var cellElement = document.createElement('td');
         var content = cell;
@@ -406,6 +404,11 @@ class JSTable extends TableManager {
         return cellElement;
     }
 
+    /**
+     * Read the colspan identifier.
+     * @param {string} cell The content of a cell.
+     * @returns {number} The colspan value.
+     */
     _getColspanIdentifierFrom(cell) {
         var colspan = 1;
         if (this.regexColspan.test(cell) === true) {
@@ -416,6 +419,11 @@ class JSTable extends TableManager {
         return colspan;
     }
 
+    /**
+     * Read the rowspan identifier.
+     * @param {string} cell The content of a cell.
+     * @returns {number} The rowspan value.
+     */
     _getRowspanIdentifierFrom(cell) {
         var rowspan = 1;
         if (this.regexRowspan.test(cell) === true) {
@@ -426,43 +434,135 @@ class JSTable extends TableManager {
         return rowspan;
     }
 
+    /**
+     * Deletes all the identifiers (colspan & rowspan) after they have been read.
+     * @param {string} cell The content of a cell.
+     * @returns {string} The cell without any identifiers.
+     */
     _clearAllIdentifiersOf(cell) {
         cell = cell.replace(this.regexColspan, '');
         cell = cell.replace(this.regexRowspan, '');
         return cell;
     }
 
-    jsArrayToHtml(arr) {
-        this.table = document.createElement('table');
-
-        for (var y = 0; y < arr.length; y++) {
-            var tr = document.createElement('tr');
-            for (var x = 0; x < arr[y].length; x++) {
-                var cell = arr[y][x];
-                if (cell === ".") continue;
-
-                var colspan = this._getColspanIdentifierFrom(cell);
-                var rowspan = this._getRowspanIdentifierFrom(cell);
-                cell = this._clearAllIdentifiersOf(cell);
-                
-                var cellElement = this.generateCell(cell, colspan, rowspan);
-                tr.appendChild(cellElement);
-            }
-            this.table.appendChild(tr);
-        }
-
-        return this.table;
+    /**
+     * Delete a row from a table.
+     * @param {number} y The number of the row (starting from 0).
+     * @param {HTMLTableElement} table The table in which you want to delete a row.
+     */
+    removeRow(y, table) {
+        table.deleteRow(y);
     }
 
-    generate(table) {
-        if (!table) {
-            if (!this.table) {
-                return undefined;
-            } else {
-                table = this.table;
+    /**
+     * Adds a row to a table.
+     * @param {Array<string>} row An array of strings
+     * @param {HTMLTableElement} table The HTML table in which you want to add the new row.
+     */
+    addRow(row, table) {
+        if (!table) throw new Error("addRow(): cannot add a row to a table that doesn't exist.");
+
+        var tr = document.createElement('tr');
+        for (var x = 0; x < row.length; x++) {
+            var cell = row[x];
+            if (cell === ".") continue;
+
+            var colspan = this._getColspanIdentifierFrom(cell);
+            var rowspan = this._getRowspanIdentifierFrom(cell);
+            if (colspan > 1 || rowspan > 1) cell = this._clearAllIdentifiersOf(cell);
+            
+            var cellElement = this.generateCell(cell, colspan, rowspan);
+            tr.appendChild(cellElement);
+        }
+
+        table.appendChild(tr);
+    }
+
+    /**
+     * Converts a js array into a HTML table.
+     * @param {Array<string>} arr An array of strings
+     */
+    jsArrayToHtml(arr) {
+        var table = document.createElement('table');
+
+        for (var y = 0; y < arr.length; y++) {
+            this.addRow(arr[y], table);
+        }
+
+        return table;
+    }
+
+    /**
+     * Converts a HTML table into a Javascript array of Cells.
+     * @param {HTMLTableElement} table The HTML table to convert.
+     * @returns {Array<Cell>} The Cells of the table.
+     */
+    htmlTableToJS(table) {
+        var array = [];
+
+        var rows = table.rows;
+        for (var y = 0; y < rows.length; y++) {
+            array[y] = [];
+            for (var x = 0; x < rows[y].children.length; x++) {
+                array[y][x] = new Cell(x, y, rows[y].children[x], table);
             }
         }
 
+        return array;
+    }
+
+    /**
+     * Calculates the maximum number of cells per row in a HTML table.
+     * @param {HTMLTableElement} table The HTML table.
+     * @returns {number} The number of cells per row.
+     */
+    getNumberOfCellsPerRow(table) {
+        var max = 0;
+        for (var line of table.rows) {
+            var n = line.children.length;
+            if (n > max) max = n
+        }
+
+        return max;
+    }
+
+    /**
+     * Transforms an array of Cells into an array of strings, 
+     * just like it has to be when you convert an Javascript array into a HTML table.
+     * @param {HTMLTableElement} table The HTML table to convert.
+     * @returns {Array<string>} The cells in a basic string.
+     */
+    htmlTableToString(table) {
+        var array = [];
+        var rows = table.rows;
+        var cellsPerRow = this.getNumberOfCellsPerRow(table);
+
+        for (var y = 0; y < rows.length; y++) {
+            array[y] = [];
+            for (var x = 0; x < cellsPerRow; x++) {
+                var cell = rows[y].children[x];
+                if (cell === undefined) {
+                    array[y][x] = ".";
+                } else {
+                    var content = cell.textContent;
+                    var rowspan = parseInt(cell.getAttribute("rowspan"));
+                    var colspan = parseInt(cell.getAttribute("colspan"));
+                    if (rowspan > 1) content += ".c*" + rowspan;
+                    if (colspan > 1) content += ".r*" + colspan;
+
+                    array[y][x] = content;
+                }
+            }
+        }
+
+        return array;
+    }
+
+    /**
+     * Generates a table in the given parent element.
+     * @param {HTMLTableElement} table The table to generate.
+     */
+    generate(table) {
         this.parent.appendChild(table);
     }
 }
