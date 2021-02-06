@@ -13,11 +13,19 @@
 
     <script src="JSTable-v3.js"></script>
     <script>
+        // var jsArray = [
+        //     ["<Main>Nom", "<Main>Prénom", "<Main>Age"],
+        //     ["Gysemans.c*2", "No data.r*2", "."],
+        //     [".", "Sarah", "17"],
+        //     ["Hawking", "Stephen", "<Random(0, 70)>"]
+        // ];
+
         var jsArray = [
-            ["<Main>Nom", "<Main>Prénom", "<Main>Age"],
-            ["Gysemans.c*2", "No data.r*2", "."],
-            [".", "Sarah", "17"],
-            ["Hawking", "Stephen", "<Random(0, 70)>"]
+            ["0", "1"],
+            ["0", "1"],
+            ["0", "1"],
+            ["0", "1"],
+            ["0", "<Random(1, 1)>"]
         ];
 
         var jstable = new JSTable("container");
@@ -40,7 +48,10 @@
         var c = document.querySelector('#test');
         var manager = new TableManager();
         var cell = manager.translate(c);
+        var t = document.querySelector('table');
         console.log(cell);
+
+        console.log(manager.selectMultipleCells({x1: 1, y1: 0}, {x2: 0, y2: 0}, t));
     </script>
 </body>
 </html>

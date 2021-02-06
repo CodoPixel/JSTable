@@ -54,6 +54,13 @@ class Cell {
      * @returns {Array<string>} The attributes and their names in a two-dimensional array: [[name, value]]
      */
     getAttributes() { return this.attributes; }
+
+    /**
+     * Clear the content of a cell.
+     */
+    clearContent() {
+        this.element.textContent = "";
+    }
 }
 
 /**
@@ -97,7 +104,7 @@ class TableManager {
         }
 
         try {
-            var cell = table.querySelectorAll('tr')[y].childNodes[x];
+            var cell = table.rows[y].childNodes[x];
             return true;
         } catch(e) {
             return false;
@@ -129,18 +136,83 @@ class TableManager {
     }
 
     /**
+     * Selects several cells (begin to end or end to begin) in a table.
+     * @param {object} from The initial coordinates (x1: number = 0, y1: number = 0).
+     * @param {object} to The final coordinates (x2: number = 0, y2: number = 0).
+     * @param {HTMLTableElement} table The table in which you want to select those cells.
+     * @returns {Array<Cell>} An array of Cells.
+     */
+    selectMultipleCells(from, to, table) {
+        if (!table) {
+            if (!this.getCurrentTable()) {
+                throw new Error("TableManager -> selectMultipleCells(): no table defined.");
+            } else {
+                table = this.getCurrentTable();
+            }
+        }
+
+        var cells = [];
+
+        // default values
+        if (from.y1 === undefined) from.y1 = 0;
+        if (from.x1 === undefined) from.x1 = 0;
+        if (to.y2 === undefined) to.y2 = 0;
+        if (to.x2 === undefined) to.x2 = 0;
+
+        // if y1 > y2 => must reverse OR if y1 == y2 AND x1 > x2 => must reverse
+        var isReversed = (from.y1 > to.y2) || (from.y1 === to.y2 && from.x1 > to.x2);
+        if (isReversed) {
+            try {
+                [from.x1, to.x2, from.y1, to.y2] = [to.x2, from.x1, to.y2, from.y1];
+            } catch(e) {
+                var temp_x1 = from.x1;
+                var temp_x2 = to.x2;
+                to.x2 = temp_x1;
+                from.x1 = temp_x2;
+
+                var temp_y1 = from.y1;
+                var temp_y2 = to.y2;
+                to.y2 = temp_y1;
+                from.y1 = temp_y2;
+            }
+        }
+        
+        // selection
+        if (from.y1 === to.y2) {
+            var row = table.rows[from.y1];
+            for (var i = from.x1; i <= to.x2; i++) {
+                cells[cells.length] = new Cell(i, from.y1, row.children[i], table);
+            }
+        } else if (from.y1 < to.y2) {
+            while (!(from.y1 > to.y2)) {
+                var row = table.rows[from.y1];
+                for (var i = from.x1; i < row.children.length; i++) {
+                    cells[cells.length] = new Cell(i, from.y1, row.children[i], table);
+                }
+                from.y1++;
+            }
+        }
+
+        if (isReversed) {
+            return cells.reverse();
+        } else {
+            return cells;
+        }
+    }
+
+    /**
      * Get an instance of Cell of a basic cell in a table.
      * @param {HTMLTableDataCellElement} cell The cell to translate.
      * @param {HTMLTableElement} table The table in which there is the cell.
      * @returns {object<number>} x, y & identifier of the cell.
      */
     translate(cell) {
-        var line = cell.parentElement;
-        var table = line.parentElement;
+        var row = cell.parentElement;
+        var table = row.parentElement;
         var x = 0;
         var y = 0;
 
-        for (var td of line.children) {
+        for (var td of row.children) {
             if (td === cell) {
                 break;
             }
@@ -148,7 +220,7 @@ class TableManager {
         }
 
         for (var tr of table.children) {
-            if (tr === line) {
+            if (tr === row) {
                 break;
             }
             y++;
@@ -185,6 +257,35 @@ class TableManager {
     addEventListenerTo(cell, name, callback) {
         if (!this.isCell(cell)) return;
         cell.getElement().addEventListener(name, callback);
+    }
+
+    /**
+     * Permanently deletes a table.
+     * @param {HTMLTableElement} table The table to delete.
+     */
+    deleteTable(table) {
+        if (!table) {
+            if (!this.getCurrentTable()) {
+                throw new Error("TableManager -> deleteTable(): the table is not defined.");
+            } else {
+                table = this.getCurrentTable();
+            }
+        }
+
+        while (table.firstChild) {
+            table.removeChild(table.firstChild);
+        }
+
+        table.style.display="none";
+    }
+
+    /**
+     * Delete a row from a table.
+     * @param {number} y The number of the row (starting from 0).
+     * @param {HTMLTableElement} table The table in which you want to delete a row.
+     */
+    removeRow(y, table) {
+        table.deleteRow(y);
     }
 }
 
@@ -305,7 +406,7 @@ class JSTable extends TableManager {
         return cellElement;
     }
 
-    getColspanIdentifierFrom(cell) {
+    _getColspanIdentifierFrom(cell) {
         var colspan = 1;
         if (this.regexColspan.test(cell) === true) {
             cell.replace(this.regexColspan, '$1');
@@ -315,7 +416,7 @@ class JSTable extends TableManager {
         return colspan;
     }
 
-    getRowspanIdentifierFrom(cell) {
+    _getRowspanIdentifierFrom(cell) {
         var rowspan = 1;
         if (this.regexRowspan.test(cell) === true) {
             cell.replace(this.regexRowspan, '$1');
@@ -325,7 +426,7 @@ class JSTable extends TableManager {
         return rowspan;
     }
 
-    clearAllIdentifiersOf(cell) {
+    _clearAllIdentifiersOf(cell) {
         cell = cell.replace(this.regexColspan, '');
         cell = cell.replace(this.regexRowspan, '');
         return cell;
@@ -340,9 +441,9 @@ class JSTable extends TableManager {
                 var cell = arr[y][x];
                 if (cell === ".") continue;
 
-                var colspan = this.getColspanIdentifierFrom(cell);
-                var rowspan = this.getRowspanIdentifierFrom(cell);
-                cell = this.clearAllIdentifiersOf(cell);
+                var colspan = this._getColspanIdentifierFrom(cell);
+                var rowspan = this._getRowspanIdentifierFrom(cell);
+                cell = this._clearAllIdentifiersOf(cell);
                 
                 var cellElement = this.generateCell(cell, colspan, rowspan);
                 tr.appendChild(cellElement);
