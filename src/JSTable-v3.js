@@ -112,6 +112,21 @@ class TableManager {
     }
 
     /**
+     * Calculates the maximum number of cells per row in a HTML table.
+     * @param {HTMLTableElement} table The HTML table.
+     * @returns {number} The number of cells per row.
+     */
+    getNumberOfCellsPerRow(table) {
+        var max = 0;
+        for (var line of table.rows) {
+            var n = line.children.length;
+            if (n > max) max = n
+        }
+
+        return max;
+    }
+
+    /**
      * Select a cell in a table according to precise coordinates. 
      * @param {number} x The x-axis of a cell.
      * @param {number} y The y-axis of a cell.
@@ -133,6 +148,99 @@ class TableManager {
         } catch (e) {
             return undefined;
         }
+    }
+
+    /**
+     * Selects all the cells from a given row in a table according to its y-axis.
+     * @param {number} y The y-axis of the row.
+     * @param {HTMLTableElement} table The table.
+     * @returns {Array<Cell>} The selected cells.
+     */
+    selectRow(y, table) {
+        var cells = [];
+        var row = table.rows[y];
+        for (var x = 0; x < row.childElementCount; x++) {
+            cells[cells.length] = new Cell(x, y, row.children[x], table);
+        }
+
+        return cells;
+    }
+
+    /**
+     * Selects all the cells from several rows in a table.
+     * @param {number} x1 The x-axis of the starting point.
+     * @param {number} x2 The x-axis of the ending point.
+     * @param {HTMLTableElement} table The HTML table in which we can find the rows.
+     */
+    selectSeveralRows(y1, y2, table) {
+        if (y1 === y2) {
+            return this.selectRow(y1);
+        }
+        
+        var isReversed = y1 > y2;
+        if (isReversed) {
+            try {
+                [y1, y2] = [y2, y1];
+            } catch(e) {
+                var temp_y1 = y1;
+                var temp_y2 = y2;
+                y1 = temp_y2;
+                y2 = temp_y1;
+            }
+        }
+
+        var cells = [];
+        for (var i = y1; i <= y2; i++) {
+            cells[cells.length] = this.selectRow(i, table);
+        }
+
+        return isReversed ? cells.reverse() : cells;
+    } 
+
+    /**
+     * Selects all the cells from a given column in a table.
+     * @param {number} x The x-axis of the column in the table.
+     * @param {HTMLTableElement} table The table in which we can find the column.
+     * @returns {Array<Cell>} The selected cells.
+     */
+    selectColumn(x, table) {
+        var cells = [];
+        for (var y = 0; y < table.rows.length; y++) {
+            cells[cells.length] = new Cell(x, y, table.rows[y].children[x], table);
+        }
+
+        return cells;
+    }
+
+    /**
+     * Selects all the cells from several columns in a table.
+     * @param {number} x1 The x-axis of the starting point.
+     * @param {number} x2 The x-axis of the ending point.
+     * @param {HTMLTableElement} table The HTML table in which we can find the columns.
+     */
+    selectSeveralColumns(x1, x2, table) {
+        if (x1 === x2) {
+            return this.selectColumn(x1);
+        }
+        
+        var isReversed = x1 > x2;
+        if (isReversed) {
+            try {
+                [x1, x2] = [x2, x1];
+            } catch(e) {
+                var temp_x1 = x1;
+                var temp_x2 = x2;
+                x1 = temp_x2;
+                x2 = temp_x1;
+            }
+        }
+
+        var cells = [];
+        for (var i = x1; i <= x2; i++) {
+            cells[cells.length] = this.selectColumn(i, table);
+        }
+
+        return isReversed ? cells.reverse() : cells;
     }
 
     /**
@@ -451,7 +559,56 @@ class JSTable extends TableManager {
      * @param {HTMLTableElement} table The table in which you want to delete a row.
      */
     removeRow(y, table) {
-        table.deleteRow(y);
+        try {
+            table.deleteRow(y);
+            return true;
+        } catch(e) {
+            return false;
+        }
+    }
+
+    /**
+     * Deletes the very last row of a table.
+     * @param {HTMLTableElement} table The table in which you want to delete the row.
+     */
+    removeLastRow(table) {
+        try {
+            table.deleteRow(-1);
+            return true;
+        } catch(e) {
+            return false;
+        }
+    }
+
+    /**
+     * Removes a cell at a specific position in a table.
+     * @param {number} x The x-axis of the cell.
+     * @param {number} y The y-axis of the cell.
+     * @param {HTMLTableElement} table The table in which we can find the cell.
+     */
+    removeCellAt(x, y, table) {
+        var cell = this.selectCell(x, y, table);
+        if (cell) {
+            return this.removeCell(cell);
+        } else {
+            return;
+        }
+    }
+
+    /**
+     * Removes a particular cell in a table.
+     * @param {Cell} cell The Cell to remove.
+     */
+    removeCell(cell) {
+        try {
+            var element = cell.getElement();
+            element.parentElement.removeChild(element);
+            return true;
+        } catch(e) {
+            console.error(e);
+        }
+
+        return false;
     }
 
     /**
@@ -509,21 +666,6 @@ class JSTable extends TableManager {
         }
 
         return array;
-    }
-
-    /**
-     * Calculates the maximum number of cells per row in a HTML table.
-     * @param {HTMLTableElement} table The HTML table.
-     * @returns {number} The number of cells per row.
-     */
-    getNumberOfCellsPerRow(table) {
-        var max = 0;
-        for (var line of table.rows) {
-            var n = line.children.length;
-            if (n > max) max = n
-        }
-
-        return max;
     }
 
     /**
