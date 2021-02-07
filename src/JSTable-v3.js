@@ -384,8 +384,25 @@ class JSTable {
     }
 
     /**
-     * Delete a row from a table.
-     * @param {number} y The number of the row (starting from 0).
+     * Deletes a column from a table.
+     * @param {number} x The number of the column (starting from 0). -1 to delete the last column.
+     * @param {HTMLTableElement} table The table in which you want to delete a column.
+     */
+    removeColumn(x, table) {
+        for (var y = 0; y < table.rows.length; y++) {
+            try {
+                table.rows[y].deleteCell(x);
+            } catch(e) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Deletes a row from a table.
+     * @param {number} y The number of the row (starting from 0). -1 to delete the last row.
      * @param {HTMLTableElement} table The table in which you want to delete a row.
      */
     removeRow(y, table) {
@@ -398,30 +415,18 @@ class JSTable {
     }
 
     /**
-     * Deletes the very last row of a table.
-     * @param {HTMLTableElement} table The table in which you want to delete the row.
-     */
-    removeLastRow(table) {
-        try {
-            table.deleteRow(-1);
-            return true;
-        } catch(e) {
-            return false;
-        }
-    }
-
-    /**
      * Removes a cell at a specific position in a table.
      * @param {number} x The x-axis of the cell.
      * @param {number} y The y-axis of the cell.
      * @param {HTMLTableElement} table The table in which we can find the cell.
+     * @returns {boolean} Was the removal successful?
      */
     removeCellAt(x, y, table) {
-        var cell = this.selectCell(x, y, table);
-        if (cell) {
-            return this.removeCell(cell);
-        } else {
-            return;
+        try {
+            table.rows[y].deleteCell(x);
+            return true;
+        } catch(e) {
+            return false;
         }
     }
 
@@ -430,15 +435,8 @@ class JSTable {
      * @param {Cell} cell The Cell to remove.
      */
     removeCell(cell) {
-        try {
-            var element = cell.getElement();
-            element.parentElement.removeChild(element);
-            return true;
-        } catch(e) {
-            console.error(e);
-        }
-
-        return false;
+        var element = cell.getElement();
+        element.parentElement.removeChild(element);
     }
 
     /**
