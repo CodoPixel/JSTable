@@ -51,20 +51,15 @@
 
         var c = jstable.translate(document.querySelector('#test'));
         var t = document.querySelector('table');
-        console.log(c);
-        console.log(jstable.selectCell(0, 0, t));
-        // console.log(jstable.selectMultipleCells({x1: 0, y1: 0}, {x2: 5, y2: 3}, t));
-        console.log(jstable.selectMultipleCells({x1: 0, y1: 0}, {x2: 0, y2: 3}, t))
-        
-        // var c = document.querySelector('#test');
-        // var manager = new TableManager();
-        // var cell = manager.translate(c);
-        // var t = document.querySelector('table');
-        // console.log(cell);
+        // console.log(c);
+        // console.log(jstable.selectCell(0, 0, t));
+        // jstable.addColumn(["9", "9", "9", "9", "."], t, -1);
 
-        // console.log(manager.selectMultipleCells({x1: 1, y1: 0}, {x2: 0, y2: 0}, t));
-        // console.log(jstable.htmlTableToString(t));
-        // console.log(manager.selectSeveralRows(4, 0, t));
+        // jstable.addRow(["1", "2", "3"], t, 3);
+        // jstable.addColumn(["6", "6", "6", "6", "6.c*2"], t, 1);
+
+        // console.log(jstable.selectMultipleCells({x1: 0, y1: 0}, {x2: 0, y2: 3}, t));
+        
     </script>
 </body>
 </html>

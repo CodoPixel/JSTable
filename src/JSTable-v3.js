@@ -462,63 +462,6 @@ class JSTable {
     }
 
     /**
-     * Generates a cell to put inside a future HTML table. The custom functions inside the content are executed.
-     * @param {string} cell The content of a cell.
-     * @param {number} colspan The colspan value.
-     * @param {number} rowspan The rowspan value.
-     * @returns {HTMLTableDataCellElement} The generated cell.
-     */
-    generateCell(cell, colspan, rowspan) {
-        var cellElement = document.createElement('td');
-        var content = cell;
-
-        // this.functions cannot be null because there is already <Main>
-        for (var func of this.functions) {
-            var regex = new RegExp('<' + func.name + '\(.*\)>|<' + func.name + '>', 'gm');
-            
-            // if there is a function inside the cell
-            if (regex.test(cell)) {
-                // change the tagname if required
-                if (func.tagName) {
-                    cellElement = document.createElement(func.tagName);
-                }
-
-                // get the arguments if there is a callback function
-                if (func.callback) {
-                    var args = this._getArgumentsFrom(func.name, cell);
-                    content = func.callback(args);
-                } else {
-                    content = content.replace(regex, '');
-                }
-
-                // set the attributes
-                if (func.attributes) {
-                    for (var attr of func.attributes) {
-                        cellElement.setAttribute(attr[0], attr[1]);
-                    }
-                }
-
-                // add the wanted events to the cell
-                if (func.events) {
-                    for (var event of func.events) {
-                        cellElement.addEventListener(event[0], event[1]);
-                    }
-                }
-            }
-
-            if (this.commonClass) {
-                cellElement.classList.add(this.commonClass);
-            }
-
-            cellElement.setAttribute('colspan', colspan);
-            cellElement.setAttribute('rowspan', rowspan);
-            cellElement.innerHTML = content;
-        }
-        
-        return cellElement;
-    }
-
-    /**
      * Read the colspan identifier.
      * @param {string} cell The content of a cell.
      * @returns {number} The colspan value.
@@ -550,37 +493,106 @@ class JSTable {
 
     /**
      * Deletes all the identifiers (colspan & rowspan) after they have been read.
-     * @param {string} cell The content of a cell.
+     * @param {string} text The content of a cell.
      * @returns {string} The cell without any identifiers.
      */
-    _clearAllIdentifiersOf(cell) {
-        cell = cell.replace(this.regexColspan, '');
-        cell = cell.replace(this.regexRowspan, '');
+    _clearAllIdentifiersOf(text) {
+        text = text.replace(this.regexColspan, '');
+        text = text.replace(this.regexRowspan, '');
+        return text;
+    }
+
+    /**
+     * Generates a cell to put inside a future HTML table. The custom functions inside the content are executed.
+     * @param {string} text The content of a cell.
+     * @param {number} colspan The colspan value.
+     * @param {number} rowspan The rowspan value.
+     * @returns {HTMLTableDataCellElement} The generated cell.
+     */
+    createCell(text, colspan, rowspan) {
+        var cell = document.createElement('td');
+        
+        for (var func of this.functions) {
+            var regex = new RegExp('<' + func.name + '\(.*\)>|<' + func.name + '>', 'gm');
+            if (regex.test(text)) {
+                if (func.tagName) cell = document.createElement(func.tagName);
+
+                if (func.callback) {
+                    var args = this._getArgumentsFrom(func.name, text);
+                    text = func.callback(args);
+                } else {
+                    text = text.replace(regex, '');
+                }
+
+                if (func.attributes) {
+                    for (var attr of func.attributes) {
+                        cell.setAttribute(attr[0], attr[1]);
+                    }
+                }
+
+                if (func.events) {
+                    for (var event of func.events) {
+                        cell.addEventListener(event[0], event[1]);
+                    }
+                }
+            }
+        }
+
+        if (this.commonClass) cell.classList.add(this.commonClass);
+        if (!cell.getAttribute('colspan')) cell.setAttribute('colspan', colspan);
+        if (!cell.getAttribute('rowspan')) cell.setAttribute('rowspan', rowspan);
+        cell.appendChild(document.createTextNode(text));
+
         return cell;
     }
 
     /**
-     * Adds a row to a table.
+     * Adds a column in a table at a certain position.
+     * @param {Array<string>} column An array of strings
+     * @param {HTMLTableElement} table The HTML table in which you want to add the new column.
+     * @param {number} index The position of the column (-1 by default).
+     */
+    addColumn(column, table, index=-1) {
+        if (!table) throw new Error("addColumn(): cannot add a row in a table that doesn't exist.");
+
+        for (var y = 0; y < column.length; y++) {
+            var text = column[y];
+            if (text === ".") continue;
+
+            var colspan = this._getColspanIdentifierFrom(text);
+            var rowspan = this._getRowspanIdentifierFrom(text);
+            if (colspan > 1 || rowspan > 1) text = this._clearAllIdentifiersOf(text);
+
+            var newCell = this.createCell(text, colspan, rowspan);
+            if (index === -1) {
+                table.rows[y].appendChild(newCell);
+            } else {
+                table.rows[y].insertBefore(newCell, table.rows[y].children[index]); // if ref undefined => -1
+            }
+        }
+    }
+
+    /**
+     * Adds a row in a table at a certain position.
      * @param {Array<string>} row An array of strings
      * @param {HTMLTableElement} table The HTML table in which you want to add the new row.
+     * @param {number} index The position of the row (-1 by default).
      */
-    addRow(row, table) {
-        if (!table) throw new Error("addRow(): cannot add a row to a table that doesn't exist.");
+    addRow(row, table, index=-1) {
+        if (!table) throw new Error("addRow(): cannot add a row in a table that doesn't exist.");
 
-        var tr = document.createElement('tr');
+        var newRow = table.insertRow(index);
         for (var x = 0; x < row.length; x++) {
-            var cell = row[x];
-            if (cell === ".") continue;
+            var text = row[x];
+            if (text === ".") continue;
 
-            var colspan = this._getColspanIdentifierFrom(cell);
-            var rowspan = this._getRowspanIdentifierFrom(cell);
-            if (colspan > 1 || rowspan > 1) cell = this._clearAllIdentifiersOf(cell);
-            
-            var cellElement = this.generateCell(cell, colspan, rowspan);
-            tr.appendChild(cellElement);
+            var colspan = this._getColspanIdentifierFrom(text);
+            var rowspan = this._getRowspanIdentifierFrom(text);
+            if (colspan > 1 || rowspan > 1) text = this._clearAllIdentifiersOf();
+
+            var newCell = this.createCell(text, colspan, rowspan);
+            newRow.appendChild(newCell);
         }
-
-        table.appendChild(tr);
     }
 
     /**
@@ -591,7 +603,7 @@ class JSTable {
         var table = document.createElement('table');
 
         for (var y = 0; y < arr.length; y++) {
-            this.addRow(arr[y], table);
+            this.addRow(arr[y], table, -1);
         }
 
         return table;
