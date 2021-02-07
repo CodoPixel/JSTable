@@ -18,10 +18,14 @@ class Cell {
         this.container = this.table === document.body ? document.body : this.table.parentElement;
 
         this.attributes = [];
-        for (var i = 0; i < this.element.getAttributeNames().length; i++) {
-            var name = this.element.getAttributeNames()[i];
-            var value = this.element.getAttribute(name);
-            this.attributes[this.attributes.length] = [name, value];
+        try {
+            for (var i = 0; i < this.element.getAttributeNames().length; i++) {
+                var name = this.element.getAttributeNames()[i];
+                var value = this.element.getAttribute(name);
+                this.attributes[this.attributes.length] = [name, value];
+            }
+        } catch(e) {
+            throw new Error("En error has occured while trying to create a cell from a HTML element.");
         }
     }
 
@@ -64,10 +68,11 @@ class Cell {
 }
 
 /**
- * Manager your tables.
+ * Converts a JS array into a HTML table and generates it in an optimised way.
  */
 class JSTable {
-    constructor() {
+    constructor(commonClass) {
+        this.commonClass = commonClass;
         this.functions = [
             {
                 name: 'Main',
@@ -80,6 +85,14 @@ class JSTable {
 
         this.regexColspan = /\.r\*(\d{1,})/;
         this.regexRowspan = /\.c\*(\d{1,})/;
+    }
+
+    /**
+     * Adds a common class to all cells when they are being generated.
+     * @param {string} commonClass The class to add to each cell before generation.
+     */
+    setCommonClass(commonClass) {
+        this.commonClass = commonClass;
     }
 
     /**
@@ -271,13 +284,25 @@ class JSTable {
         // selection
         if (from.y1 === to.y2) {
             var row = table.rows[from.y1];
+            if (to.x2 >= row.childElementCount) to.x2 = row.childElementCount - 1;
             for (var i = from.x1; i <= to.x2; i++) {
                 cells[cells.length] = new Cell(i, from.y1, row.children[i], table);
             }
         } else if (from.y1 < to.y2) {
             while (!(from.y1 > to.y2)) {
                 var row = table.rows[from.y1];
-                for (var i = from.x1; i < row.children.length; i++) {
+                var endingPoint = to.x2;
+                if (from.y1 === to.y2) {
+                    // if this is the last line,
+                    // then we have to stop to x2
+                    // however, if x2 >= number of cells, then we select every cell of that row again
+                    if (to.x2 >= row.childElementCount) endingPoint = row.childElementCount - 1;
+                } else {
+                    // if this is not the last line,
+                    // then we select every cell of that row
+                    endingPoint = row.childElementCount - 1;
+                }
+                for (var i = from.x1; i <= endingPoint; i++) {
                     cells[cells.length] = new Cell(i, from.y1, row.children[i], table);
                 }
                 from.y1++;
@@ -479,6 +504,10 @@ class JSTable {
                         cellElement.addEventListener(event[0], event[1]);
                     }
                 }
+            }
+
+            if (this.commonClass) {
+                cellElement.classList.add(this.commonClass);
             }
 
             cellElement.setAttribute('colspan', colspan);
