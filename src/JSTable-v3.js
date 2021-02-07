@@ -66,26 +66,21 @@ class Cell {
 /**
  * Manager your tables.
  */
-class TableManager {
-    /**
-     * Manage your tables.
-     * @param {HTMLTableElement} table The current table you want to exploit. Not required.
-     */
-    constructor(table) {
-        this.currentTable = table;
+class JSTable {
+    constructor() {
+        this.functions = [
+            {
+                name: 'Main',
+                callback: null,
+                events: null,
+                tagName: 'th',
+                attributes: null,
+            }
+        ];
+
+        this.regexColspan = /\.r\*(\d{1,})/;
+        this.regexRowspan = /\.c\*(\d{1,})/;
     }
-
-    /**
-     * Gets the table you are currently exploiting.
-     * @returns {HTMLTableElement} The current table.
-     */
-    getCurrentTable() { return this.currentTable; }
-
-    /**
-     * Defines the table to exploit.
-     * @param {HTMLTableElement} table The new current table you want to exploit.
-     */
-    setCurrentTable(table) { this.currentTable = table; }
 
     /**
      * Checks whether a cell exists in a table according to precise coordinates.
@@ -95,17 +90,9 @@ class TableManager {
      * @returns {boolean} `true` if the cell exists, otherwise it returns `false`.
      */
     doesExist(x, y, table) {
-        if (!table) {
-            if (!this.getCurrentTable()) {
-                throw new Error("TableManager -> doesExist(): the table is not defined.");
-            } else {
-                table = this.getCurrentTable();
-            }
-        }
-
         try {
             var cell = table.rows[y].childNodes[x];
-            return true;
+            return cell !== undefined;
         } catch(e) {
             return false;
         }
@@ -131,17 +118,9 @@ class TableManager {
      * @param {number} x The x-axis of a cell.
      * @param {number} y The y-axis of a cell.
      * @param {HTMLTableElement} table The table.
-     * @returns {Cell} The wanted cell with some datas (x, y, container). If the cell doesn't exist, then it returns `undefined`.
+     * @returns {Cell} The wanted cell with some datas (x, y, container, etc.). If the cell doesn't exist, then it returns `undefined`.
      */
     selectCell(x, y, table) {
-        if (!table) {
-            if (!this.getCurrentTable()) {
-                throw new Error("TableManager -> selectCell(): the table is not defined.");
-            } else {
-                table = this.getCurrentTable();
-            }
-        }
-        
         try {
             var cell = table.rows[y].childNodes[x];
             return new Cell(x, y, cell, table);
@@ -168,9 +147,10 @@ class TableManager {
 
     /**
      * Selects all the cells from several rows in a table.
-     * @param {number} x1 The x-axis of the starting point.
-     * @param {number} x2 The x-axis of the ending point.
+     * @param {number} y1 The y-axis of the starting point.
+     * @param {number} y2 The y-axis of the ending point.
      * @param {HTMLTableElement} table The HTML table in which we can find the rows.
+     * @returns {Array<Array<Cell>>} An array of Cells.
      */
     selectSeveralRows(y1, y2, table) {
         if (y1 === y2) {
@@ -194,7 +174,12 @@ class TableManager {
             cells[cells.length] = this.selectRow(i, table);
         }
 
-        return isReversed ? cells.reverse() : cells;
+        if (isReversed) {
+            for (var i = 0; i < cells.length; i++) cells[i].reverse();
+            return cells.reverse();
+        } else {
+            return cells;
+        }
     } 
 
     /**
@@ -217,6 +202,7 @@ class TableManager {
      * @param {number} x1 The x-axis of the starting point.
      * @param {number} x2 The x-axis of the ending point.
      * @param {HTMLTableElement} table The HTML table in which we can find the columns.
+     * @returns {Array<Array<Cell>>} An array of Cells.
      */
     selectSeveralColumns(x1, x2, table) {
         if (x1 === x2) {
@@ -240,7 +226,12 @@ class TableManager {
             cells[cells.length] = this.selectColumn(i, table);
         }
 
-        return isReversed ? cells.reverse() : cells;
+        if (isReversed) {
+            for (var i = 0; i < cells.length; i++) cells[i].reverse();
+            return cells.reverse();
+        } else {
+            return cells;
+        }
     }
 
     /**
@@ -251,14 +242,6 @@ class TableManager {
      * @returns {Array<Cell>} An array of Cells.
      */
     selectMultipleCells(from, to, table) {
-        if (!table) {
-            if (!this.getCurrentTable()) {
-                throw new Error("TableManager -> selectMultipleCells(): no table defined.");
-            } else {
-                table = this.getCurrentTable();
-            }
-        }
-
         var cells = [];
 
         // default values
@@ -301,18 +284,14 @@ class TableManager {
             }
         }
 
-        if (isReversed) {
-            return cells.reverse();
-        } else {
-            return cells;
-        }
+        return isReversed ? cells.reverse() : cells;
     }
 
     /**
-     * Get an instance of Cell of a basic cell in a table.
+     * Gets an instance of Cell from a basic cell in a table.
      * @param {HTMLTableDataCellElement} cell The cell to translate.
      * @param {HTMLTableElement} table The table in which there is the cell.
-     * @returns {object<number>} x, y & identifier of the cell.
+     * @returns {Cell} The converted cell.
      */
     translate(cell) {
         var row = cell.parentElement;
@@ -372,76 +351,74 @@ class TableManager {
      * @param {HTMLTableElement} table The table to delete.
      */
     deleteTable(table) {
-        if (!table) {
-            if (!this.getCurrentTable()) {
-                throw new Error("TableManager -> deleteTable(): the table is not defined.");
-            } else {
-                table = this.getCurrentTable();
-            }
-        }
-
         while (table.firstChild) {
             table.removeChild(table.firstChild);
         }
 
         table.style.display="none";
     }
-}
 
-/**
- * Converts a JS array into a HTML table and generates it in an optimised way.
- */
-class JSTable extends TableManager {
-    constructor(parent) {
-        super();
-
-        this.table = null;
-        this.functions = [
-            {
-                name: 'Main',
-                callback: null,
-                events: null,
-                tagName: 'th',
-                attributes: null,
-            }
-        ];
-
-        this.regexColspan = /\.r\*(\d{1,})/;
-        this.regexRowspan = /\.c\*(\d{1,})/;
-        
-        if (!parent) {
-            this.parent = document.body;
-        } else {
-            this.parent = document.getElementById(parent);
-            if (!this.parent) {
-                throw new Error("JSTable(): the parent does not exist.");
-            }
+    /**
+     * Delete a row from a table.
+     * @param {number} y The number of the row (starting from 0).
+     * @param {HTMLTableElement} table The table in which you want to delete a row.
+     */
+    removeRow(y, table) {
+        try {
+            table.deleteRow(y);
+            return true;
+        } catch(e) {
+            return false;
         }
-        
     }
 
     /**
-     * Gets the parent in which the table is generated.
-     * @returns {HTMLElement} The parent in which the table is generated.
+     * Deletes the very last row of a table.
+     * @param {HTMLTableElement} table The table in which you want to delete the row.
      */
-    getCurrentParent() { return this.parent; }
+    removeLastRow(table) {
+        try {
+            table.deleteRow(-1);
+            return true;
+        } catch(e) {
+            return false;
+        }
+    }
 
     /**
-     * Defines the parent in which the table has to be generated.
-     * @param {HTMLElement} parent The parent in which the table has to be generated.
+     * Removes a cell at a specific position in a table.
+     * @param {number} x The x-axis of the cell.
+     * @param {number} y The y-axis of the cell.
+     * @param {HTMLTableElement} table The table in which we can find the cell.
      */
-    setCurrentParent(parent) { this.parent = parent; }
+    removeCellAt(x, y, table) {
+        var cell = this.selectCell(x, y, table);
+        if (cell) {
+            return this.removeCell(cell);
+        } else {
+            return;
+        }
+    }
 
     /**
-     * @returns {HTMLTableElement} The generated table.
+     * Removes a particular cell in a table.
+     * @param {Cell} cell The Cell to remove.
      */
-    getTable() {
-        return this.table;
+    removeCell(cell) {
+        try {
+            var element = cell.getElement();
+            element.parentElement.removeChild(element);
+            return true;
+        } catch(e) {
+            console.error(e);
+        }
+
+        return false;
     }
 
     /**
      * Add special functions to execute while the creation of the table.
-     * @param {Object} options An object that contains a few options in order for the function to work properly.
+     * @param {object} options An object that contains a few options in order for the function to work properly.
      */
     addFunction(options) {
         this.functions[this.functions.length] = options;
@@ -554,64 +531,6 @@ class JSTable extends TableManager {
     }
 
     /**
-     * Delete a row from a table.
-     * @param {number} y The number of the row (starting from 0).
-     * @param {HTMLTableElement} table The table in which you want to delete a row.
-     */
-    removeRow(y, table) {
-        try {
-            table.deleteRow(y);
-            return true;
-        } catch(e) {
-            return false;
-        }
-    }
-
-    /**
-     * Deletes the very last row of a table.
-     * @param {HTMLTableElement} table The table in which you want to delete the row.
-     */
-    removeLastRow(table) {
-        try {
-            table.deleteRow(-1);
-            return true;
-        } catch(e) {
-            return false;
-        }
-    }
-
-    /**
-     * Removes a cell at a specific position in a table.
-     * @param {number} x The x-axis of the cell.
-     * @param {number} y The y-axis of the cell.
-     * @param {HTMLTableElement} table The table in which we can find the cell.
-     */
-    removeCellAt(x, y, table) {
-        var cell = this.selectCell(x, y, table);
-        if (cell) {
-            return this.removeCell(cell);
-        } else {
-            return;
-        }
-    }
-
-    /**
-     * Removes a particular cell in a table.
-     * @param {Cell} cell The Cell to remove.
-     */
-    removeCell(cell) {
-        try {
-            var element = cell.getElement();
-            element.parentElement.removeChild(element);
-            return true;
-        } catch(e) {
-            console.error(e);
-        }
-
-        return false;
-    }
-
-    /**
      * Adds a row to a table.
      * @param {Array<string>} row An array of strings
      * @param {HTMLTableElement} table The HTML table in which you want to add the new row.
@@ -637,7 +556,7 @@ class JSTable extends TableManager {
 
     /**
      * Converts a js array into a HTML table.
-     * @param {Array<string>} arr An array of strings
+     * @param {Array<Array<string>>} arr An array of strings
      */
     jsArrayToHtml(arr) {
         var table = document.createElement('table');
@@ -670,7 +589,7 @@ class JSTable extends TableManager {
 
     /**
      * Transforms an array of Cells into an array of strings, 
-     * just like it has to be when you convert an Javascript array into a HTML table.
+     * just like it has to be when you convert a Javascript array into a HTML table.
      * @param {HTMLTableElement} table The HTML table to convert.
      * @returns {Array<string>} The cells in a basic string.
      */
@@ -703,8 +622,9 @@ class JSTable extends TableManager {
     /**
      * Generates a table in the given parent element.
      * @param {HTMLTableElement} table The table to generate.
+     * @param {HTMLElement} container The container in which to generate the table.
      */
-    generate(table) {
-        this.parent.appendChild(table);
+    generate(table, container) {
+        container.appendChild(table);
     }
 }

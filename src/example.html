@@ -28,9 +28,10 @@
             ["0", "<Random(1, 1)>"]
         ];
 
-        
+        // TODO: add <Editable> as native function (when we click on it => it becomes editable)
+        // note: focusout event to toggle the contenteditable
 
-        var jstable = new JSTable("container");
+        var jstable = new JSTable();
         jstable.addFunction({
             name: 'Random',
             callback: (args) => {
@@ -44,14 +45,17 @@
             ]
         });
 
-        var htmlArray = jstable.jsArrayToHtml(jsArray);
-        jstable.generate(htmlArray);
+        var container = document.getElementById('container');
+        var htmlTable = jstable.jsArrayToHtml(jsArray);
+        jstable.generate(htmlTable, container);
 
-        var c = document.querySelector('#test');
-        var manager = new TableManager();
-        var cell = manager.translate(c);
-        var t = document.querySelector('table');
-        console.log(cell);
+
+        
+        // var c = document.querySelector('#test');
+        // var manager = new TableManager();
+        // var cell = manager.translate(c);
+        // var t = document.querySelector('table');
+        // console.log(cell);
 
         // console.log(manager.selectMultipleCells({x1: 1, y1: 0}, {x2: 0, y2: 0}, t));
         // console.log(jstable.htmlTableToString(t));
