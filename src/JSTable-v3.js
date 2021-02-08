@@ -65,6 +65,17 @@ class Cell {
     clearContent() {
         this.element.textContent = "";
     }
+
+    editable() {
+        this.element.setAttribute('contenteditable', 'true');
+        this.element.setAttribute('spellcheck', 'false');
+        this.element.classList.add('editable');
+        this.element.addEventListener('focusout', function(e) {
+            var jstable = new JSTable();
+            var table = jstable.translate(e.target).getTable();
+            jstable.refresh(table);
+        });
+    }
 }
 
 /**
@@ -139,6 +150,7 @@ class JSTable {
 
         this.regexColspan = /\.r\*(\d{1,})/;
         this.regexRowspan = /\.c\*(\d{1,})/;
+        this.regexSelector = /#(\d{1,}-\d{1,}:\d{1,}-\d{1,})|#(\d{1,}-\d{1,})/g;
     }
 
     /**
@@ -507,6 +519,14 @@ class JSTable {
     }
 
     /**
+     * Adds a formula.
+     * @param {Function} func The function to execute.
+     */
+    addFormula(name, func) {
+        this.formulas[name] = func;
+    }
+
+    /**
      * Overwrite a custom function.
      * @param {string} refName The name of the function to overwrite.
      * @param {object} options An object that contains the function's options.
@@ -582,37 +602,12 @@ class JSTable {
      */
     createCell(text, colspan, rowspan) {
         var cell = document.createElement('td');
-        
-        for (var func of this.functions) {
-            var regex = new RegExp('<' + func.name + '\(.*\)>|<' + func.name + '>', 'gm');
-            if (regex.test(text)) {
-                if (func.tagName) cell = document.createElement(func.tagName);
-
-                if (func.callback) {
-                    var args = this._getArgumentsFrom(func.name, text);
-                    text = func.callback(args);
-                } else {
-                    text = text.replace(regex, '');
-                }
-
-                if (func.attributes) {
-                    for (var attr of func.attributes) {
-                        cell.setAttribute(attr[0], attr[1]);
-                    }
-                }
-
-                if (func.events) {
-                    for (var event of func.events) {
-                        cell.addEventListener(event[0], event[1]);
-                    }
-                }
-            }
-        }
 
         if (this.commonClass) cell.classList.add(this.commonClass);
-        if (!cell.getAttribute('colspan')) cell.setAttribute('colspan', colspan);
-        if (!cell.getAttribute('rowspan')) cell.setAttribute('rowspan', rowspan);
-        text instanceof HTMLElement ? cell.appendChild(text) : cell.appendChild(document.createTextNode(text));
+        cell.setAttribute('colspan', colspan);
+        cell.setAttribute('rowspan', rowspan);
+        cell.setAttribute('data-origin', text);
+        cell.appendChild(document.createTextNode(text));
 
         return cell;
     }
@@ -640,7 +635,7 @@ class JSTable {
             } else {
                 table.rows[y].insertBefore(newCell, table.rows[y].children[index]); // if ref undefined => -1
             }
-        }
+        }   
     }
 
     /**
@@ -669,9 +664,133 @@ class JSTable {
     /**
      * Checks whether a selector is a multiple selector or not.
      * @param {string} selector The selector.
+     * @returns {boolean} Is a multiple selector ?
      */
     isMultipleSelector(selector) {
-        return /(\d{1,}-\d{1,}:\d{1,}-\d{1,})/g.test(selector);
+        return /#(\d{1,}-\d{1,}:\d{1,}-\d{1,})/g.test(selector);
+    }
+
+    /**
+     * Reads a multiple selector and returns the coordinates.
+     * @param {string} selector The multiple selector.
+     * @returns {object} The coordinates x1, y1, x2, y2.
+     */
+    readMultipleSelector(selector) {
+        var matches = selector.match(/(\d{1,})/g);
+        var y1 = parseInt(matches[0]),
+            x1 = parseInt(matches[1]),
+            y2 = parseInt(matches[2]),
+            x2 = parseInt(matches[3]);
+        return {
+            y1:y1,
+            x1:x1,
+            y2:y2,
+            x2:x2
+        };
+    }
+
+    /**
+     * Reads a basic selector in order to extrapolate the x-axis & y-axis.
+     * @param {string} selector The basic selector.
+     * @returns {object} The coordinates x, y.
+     */
+    readBasicSelector(selector) {
+        var matches = selector.match(/(\d{1,})/g);
+        var y = parseInt(matches[0]),
+            x = parseInt(matches[1]);
+        return {
+            y:y,
+            x:x
+        };
+    }
+
+    /**
+     * Reads the content of a cell in order to execute the custom function that it might contains.
+     * @param {string} text The cell to read.
+     * @returns {object} The new propreties to apply to a cell.
+     */
+    interpretCustomFunction(text) {
+        var newContent = text;
+        var attributes = []; // [][]
+        var events = []; // [][]
+
+        for (var func of this.functions) {
+            var regex = new RegExp('<' + func.name + '\(.*\)>|<' + func.name + '>', 'gm');
+            if (regex.test(text)) {
+                console.log(text);
+                if (func.callback) {
+                    var args = this._getArgumentsFrom(func.name, text);
+                    newContent = func.callback(args);
+                } else {
+                    newContent = text.replace(regex, '');
+                }
+
+                if (func.attributes) {
+                    for (var attr of func.attributes) {
+                        attributes[attributes.length] = attr;
+                    }
+                }
+
+                if (func.events) {
+                    for (var event of func.events) {
+                        events[events.length] = event;
+                    }
+                }
+            }
+        }
+
+        return {
+            newContent: newContent,
+            attributes: attributes,
+            events: events
+        };
+    }
+
+    /**
+     * We read the content in order to get all the sequences to interpret.
+     * @param {string} content A string that contains selectors.
+     * @returns {Array<string>} The sequences.
+     */
+    getSequencesFrom(content) { return content.match(/\{(.*?)\}/gmi); }
+
+    /**
+     * Read sequences & interpret its content.
+     * @param {string} text The content of a cell to interpret.
+     * @param {HTMLTableElement} table The table in which we can find the cells.
+     */
+    interpretSequences(text, table) {
+        var sequences = this.getSequencesFrom(text),
+            sequence = '',
+            newContent = text; // []
+
+        if (!sequences) return text;
+
+        for (sequence of sequences) {
+            var selectors = sequence.match(this.regexSelector);
+            for (var selector of selectors) {
+                if (!this.isMultipleSelector(selector)) {
+                    var data = this.readBasicSelector(selector);
+                    var cell = this.selectCell(data.x, data.y, table).getElement();
+                    newContent = newContent.replace(selector, cell.textContent);
+                } else {
+                    throw new Error("interpretSequences(): cannot read a multiple selector inside a sequence.");
+                }
+            }
+        }
+
+        sequences = this.getSequencesFrom(newContent);
+        for (sequence of sequences) {
+            var clothes = /\{|\}/gm
+            var nakedSequence = sequence.replace(clothes, "");
+            try {
+                var evaluatedContent = eval(nakedSequence);
+                newContent = newContent.replace(sequence, evaluatedContent);
+            } catch(e) {
+                console.info("Unable to evaluate the content of a cell while interpreting it.");
+            }
+        }
+
+        return newContent;
     }
 
     /**
@@ -679,28 +798,31 @@ class JSTable {
      * @param {string} text The content of a cell.
      * @param {HTMLTableElement} table The table in which we can find the cells.
      */
-    calcFormula(text, table) {
+    interpretFormula(text, table) {
         var formulaRegex = /=([A-Z]*)/g;
         text.replace(formulaRegex, '$1');
         var formulaName = RegExp.$1;
         
         var values = [];
-        var selectors = text.match(/(\d{1,}-\d{1,}:\d{1,}-\d{1,})|(\d{1,}-\d{1,})/g);
-        for (var selector of selectors) {
-            if (this.isMultipleSelector(selector)) {
-                var y1 = selector[0],
-                    x1 = selector[2],
-                    y2 = selector[4],
-                    x2 = selector[6];
-                var cells = this.selectMultipleCells({y1:y1, x1:x1}, {y2:y2, x2:x2}, table);
-                for (var cell of cells) {
-                    values[values.length] = cell.getElement().textContent;
+        var selectors = text.match(this.regexSelector);
+        if (selectors) {
+            for (var selector of selectors) {
+                if (this.isMultipleSelector(selector)) {
+                    var data = this.readMultipleSelector(selector);
+                    var cells = this.selectMultipleCells({y1:data.y1, x1:data.x1}, {y2:data.y2, x2:data.x2}, table);
+                    for (var cell of cells) {
+                        values[values.length] = cell.getElement().textContent;
+                    }
+                } else {
+                    var data = this.readBasicSelector(selector);
+                    values[values.length] = this.selectCell(data.x,data.y,table).getElement().textContent;
                 }
-            } else {
-                var y = selector[0],
-                    x = selector[2];
-                values[values.length] = this.selectCell(x,y,table).getElement().textContent;
             }
+        } else {
+            // if there is no selectors,
+            // then it may means that the user used sequences instead of arguments.
+            // Therefore, all the numbers inside `text` must be the values
+            values = text.match(/(\d{1,})/g);
         }
 
         if (this.formulas[formulaName]) {
@@ -711,28 +833,120 @@ class JSTable {
     }
 
     /**
-     * Converts a js array into a HTML table.
-     * @param {Array<Array<string>>} arr An array of strings
+     * Re-evaluates the original code of the cell at the time of its creation.
+     * Useful if you have modified data within a cell and want to recalculate automatically.
+     * @param {HTMLTableElement} table The table to refresh.
      */
-    jsArrayToHtml(arr) {
-        var table = document.createElement('table'),
-                    y = 0,
-                    x = 0;
+    refreshContent(table) {
+        var y = 0,
+            x = 0;
 
-        for (y = 0; y < arr.length; y++) {
-            this.addRow(arr[y], table, -1);
+        var origins = [];
+
+        for (y = 0; y < table.rows.length; y++) {
+            origins[y] = [];
+            for (x = 0; x < table.rows[y].cells.length; x++) {
+                origins[y][x] = table.rows[y].cells[x].dataset.origin;
+            }
+        }
+
+        for (y = 0; y < origins.length; y++) {
+            for (x = 0; x < origins[y].length; x++) {
+                var originalCell = origins[y][x];
+
+            }
+        }
+
+        // chaque cellule prendra la nouvelle valeur qui lui correspond
+        // PB : attributes & events ?
+
+        for (y = 0; y < table.rows.length; y++) {
+            for (x = 0; x < table.rows[y].cells.length; x++) {
+                var cell = table.rows[y].cells[x];
+                var origin = cell.dataset.origin;
+                var result = this.interpretCustomFunction(origin);
+                table.rows[y].cells[x].textContent = result.newContent;
+            }
+        }
+
+        for (y = 0; y < table.rows.length; y++) {
+            for (x = 0; x < table.rows[y].cells.length; x++) {
+                var cell = table.rows[y].cells[x];
+                var text = cell.dataset.origin;
+                table.rows[y].cells[x].textContent = this.interpretSequences(text, table);
+            }
+        }
+
+        for (y = 0; y < table.rows.length; y++) {
+            for (x = 0; x < table.rows[y].cells.length; x++) {
+                var cell = table.rows[y].cells[x];
+                var text = cell.dataset.origin;
+                console.log(text);
+                if (text[0] === "=") {
+                    table.rows[y].cells[x].textContent = this.interpretFormula(text, table);
+                }
+            }
+        }
+
+        console.log(table);
+
+        return table;
+    }
+
+    /**
+     * Reads a table in order to do all the necessary interpretations (sequences, custom functions & formulas)
+     * @param {HTMLTableElement} table The table to read.
+     * @returns {HTMLTableElement} The table whose cells were read.
+     */
+    read(table) {
+        var y = 0,
+            x = 0;
+
+        for (y = 0; y < table.rows.length; y++) {
+            for (x = 0; x < table.rows[y].cells.length; x++) {
+                var cell = table.rows[y].cells[x];
+                var result = this.interpretCustomFunction(cell.textContent);
+                table.rows[y].cells[x].textContent = result.newContent;
+                for (var attr of result.attributes) {
+                    table.rows[y].cells[x].setAttribute(attr[0], attr[1]);
+                }
+                for (var event of result.events) {
+                    table.rows[y].cells[x].addEventListener(event[0], event[1]);
+                }
+            }
+        }
+
+        for (y = 0; y < table.rows.length; y++) {
+            for (x = 0; x < table.rows[y].cells.length; x++) {
+                var text = table.rows[y].cells[x].textContent;
+                table.rows[y].cells[x].textContent = this.interpretSequences(text, table);
+            }
         }
 
         for (y = 0; y < table.rows.length; y++) {
             for (x = 0; x < table.rows[y].cells.length; x++) {
                 var text = table.rows[y].cells[x].textContent;
                 if (text[0] === "=") {
-                    table.rows[y].cells[x].textContent = this.calcFormula(text, table);
+                    table.rows[y].cells[x].textContent = this.interpretFormula(text, table);
                 }
             }
         }
 
         return table;
+    }
+
+    /**
+     * Converts a js array into a HTML table.
+     * @param {Array<Array<string>>} arr An array of strings
+     */
+    jsArrayToHtml(arr) {
+        var table = document.createElement('table');
+
+        for (var y = 0; y < arr.length; y++) {
+            this.addRow(arr[y], table, -1);
+        }
+
+        return this.read(table);
     }
 
     /**
