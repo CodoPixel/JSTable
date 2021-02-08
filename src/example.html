@@ -21,7 +21,7 @@
         // ];
 
         var jsArray = [
-            ["0", "1", "8"],
+            ["<Edit>0", "1", "8"],
             ["0", "1", "8"],
             ["0", "1", "8"],
             ["0", "1", "8"],
@@ -44,6 +44,14 @@
                 ['click', (e) => console.info(e)]
             ]
         });
+
+        jstable.overwriteFunction('Editable', {
+            name: 'Edit',
+            attributes: [['id', 'test'], ['contenteditable', 'true'], ['spellcheck', 'false']],
+            events: [
+                ['input', function(e){ console.log(e); }]
+            ]
+        })
 
         var container = document.getElementById('container');
         var htmlTable = jstable.jsArrayToHtml(jsArray);

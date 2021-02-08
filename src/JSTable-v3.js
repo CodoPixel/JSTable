@@ -80,6 +80,10 @@ class JSTable {
                 events: null,
                 tagName: 'th',
                 attributes: null,
+            },
+            {
+                name: 'Editable',
+                attributes: [['class', 'editable'], ['contenteditable', 'true']]
             }
         ];
 
@@ -321,6 +325,9 @@ class JSTable {
     translate(cell) {
         var row = cell.parentElement;
         var table = row.parentElement;
+        // if this is the tbody that we select
+        if (table instanceof HTMLTableSectionElement) table = row.parentElement.parentElement;
+
         var x = 0;
         var y = 0;
 
@@ -440,11 +447,25 @@ class JSTable {
     }
 
     /**
-     * Add special functions to execute while the creation of the table.
+     * Add custom functions to execute while the creation of the table.
      * @param {object} options An object that contains a few options in order for the function to work properly.
      */
     addFunction(options) {
         this.functions[this.functions.length] = options;
+    }
+
+    /**
+     * Overwrite a custom function.
+     * @param {string} refName The name of the function to overwrite.
+     * @param {object} options An object that contains the function's options.
+     */
+    overwriteFunction(refName, options) {
+        for (var i = 0; i < this.functions.length; i++) {
+            if (this.functions[i].name === refName) {
+                this.functions[i] = options;
+                return;
+            }
+        }
     }
 
     /**
