@@ -87,6 +87,56 @@ class JSTable {
             }
         ];
 
+        this.formulas = {
+            AVERAGE: function(values) {
+                var n = values.length;
+                var s = 0;
+                for (var i = 0; i < n; i++) {
+                    s+=parseInt(values[i]);
+                }
+                return s / n;
+            },
+            SUM: function(values) {
+                var s = 0;
+                for (var i = 0; i < values.length; i++) {
+                    s+=parseInt(values[i]);
+                }
+                return s;
+            },
+            MAX: function(values) {
+                var max = values[0];
+                for (var i = 0; i < values.length; i++) {
+                    var n = parseInt(values[i]);
+                    if (n > max) {
+                        max = n;
+                    }
+                }
+                return max;
+            },
+            MIN: function(values) {
+                var min = values[0];
+                for (var i = 0; i < values.length; i++) {
+                    var n = parseInt(values[i]);
+                    if (n < min) {
+                        min = n;
+                    }
+                }
+                return min;
+            },
+            ABS: function(values) {
+                var n = parseInt(values[0]);
+                return n < 0 ? n * -1 : n;
+            },
+            FACTORIAL: function(values) {
+                var p = 1;
+                var value = parseInt(values[0]);
+                for (var i = value; i > 0; i--) {
+                    p = p * i;
+                }
+                return p;
+            }
+        };
+
         this.regexColspan = /\.r\*(\d{1,})/;
         this.regexRowspan = /\.c\*(\d{1,})/;
     }
@@ -288,6 +338,7 @@ class JSTable {
         // selection
         if (from.y1 === to.y2) {
             var row = table.rows[from.y1];
+            if (!row) return cells;
             if (to.x2 >= row.childElementCount) to.x2 = row.childElementCount - 1;
             for (var i = from.x1; i <= to.x2; i++) {
                 cells[cells.length] = new Cell(i, from.y1, row.children[i], table);
@@ -295,6 +346,7 @@ class JSTable {
         } else if (from.y1 < to.y2) {
             while (!(from.y1 > to.y2)) {
                 var row = table.rows[from.y1];
+                if (!row) break;
                 var endingPoint = to.x2;
                 if (from.y1 === to.y2) {
                     // if this is the last line,
@@ -615,14 +667,69 @@ class JSTable {
     }
 
     /**
+     * Checks whether a selector is a multiple selector or not.
+     * @param {string} selector The selector.
+     */
+    isMultipleSelector(selector) {
+        return /(\d{1,}-\d{1,}:\d{1,}-\d{1,})/g.test(selector);
+    }
+
+    /**
+     * Read a text in order to interpret its content if there is a formula in it.
+     * @param {string} text The content of a cell.
+     * @param {HTMLTableElement} table The table in which we can find the cells.
+     */
+    calcFormula(text, table) {
+        var formulaRegex = /=([A-Z]*)/g;
+        text.replace(formulaRegex, '$1');
+        var formulaName = RegExp.$1;
+        
+        var values = [];
+        var selectors = text.match(/(\d{1,}-\d{1,}:\d{1,}-\d{1,})|(\d{1,}-\d{1,})/g);
+        for (var selector of selectors) {
+            if (this.isMultipleSelector(selector)) {
+                var y1 = selector[0],
+                    x1 = selector[2],
+                    y2 = selector[4],
+                    x2 = selector[6];
+                var cells = this.selectMultipleCells({y1:y1, x1:x1}, {y2:y2, x2:x2}, table);
+                for (var cell of cells) {
+                    values[values.length] = cell.getElement().textContent;
+                }
+            } else {
+                var y = selector[0],
+                    x = selector[2];
+                values[values.length] = this.selectCell(x,y,table).getElement().textContent;
+            }
+        }
+
+        if (this.formulas[formulaName]) {
+            return this.formulas[formulaName](values);
+        } else {
+            return undefined;
+        }
+    }
+
+    /**
      * Converts a js array into a HTML table.
      * @param {Array<Array<string>>} arr An array of strings
      */
     jsArrayToHtml(arr) {
-        var table = document.createElement('table');
+        var table = document.createElement('table'),
+                    y = 0,
+                    x = 0;
 
-        for (var y = 0; y < arr.length; y++) {
+        for (y = 0; y < arr.length; y++) {
             this.addRow(arr[y], table, -1);
+        }
+
+        for (y = 0; y < table.rows.length; y++) {
+            for (x = 0; x < table.rows[y].cells.length; x++) {
+                var text = table.rows[y].cells[x].textContent;
+                if (text[0] === "=") {
+                    table.rows[y].cells[x].textContent = this.calcFormula(text, table);
+                }
+            }
         }
 
         return table;

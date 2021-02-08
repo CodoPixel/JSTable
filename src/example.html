@@ -13,23 +13,9 @@
 
     <script src="JSTable-v3.js"></script>
     <script>
-        // var jsArray = [
-        //     ["<Main>Nom", "<Main>Prénom", "<Main>Age"],
-        //     ["Gysemans.c*2", "No data.r*2", "."],
-        //     [".", "Sarah", "17"],
-        //     ["Hawking", "Stephen", "<Random(0, 70)>"]
-        // ];
-
         var jsArray = [
-            ["<Edit>0", "1", "8"],
-            ["0", "1", "8"],
-            ["0", "1", "8"],
-            ["0", "1", "8"],
-            ["0", "<Random(1, 1)>", "8"]
+            ["-15", "-17", "5", "=FACTORIAL(0-2)"]
         ];
-
-        // TODO: add <Editable> as native function (when we click on it => it becomes editable)
-        // note: focusout event to toggle the contenteditable
 
         var jstable = new JSTable();
         jstable.addFunction({
@@ -45,29 +31,9 @@
             ]
         });
 
-        jstable.overwriteFunction('Editable', {
-            name: 'Edit',
-            attributes: [['id', 'test'], ['contenteditable', 'true'], ['spellcheck', 'false']],
-            events: [
-                ['input', function(e){ console.log(e); }]
-            ]
-        })
-
         var container = document.getElementById('container');
         var htmlTable = jstable.jsArrayToHtml(jsArray);
         jstable.generate(htmlTable, container);
-
-        var c = jstable.translate(document.querySelector('#test'));
-        var t = document.querySelector('table');
-        // console.log(c);
-        // console.log(jstable.selectCell(0, 0, t));
-        // jstable.addColumn(["9", "9", "9", "9", "."], t, -1);
-
-        // jstable.addRow(["1", "2", "3"], t, 3);
-        // jstable.addColumn(["6", "6", "6", "6", "6.c*2"], t, 1);
-
-        // console.log(jstable.selectMultipleCells({x1: 0, y1: 0}, {x2: 0, y2: 3}, t));
-        
     </script>
 </body>
 </html>
