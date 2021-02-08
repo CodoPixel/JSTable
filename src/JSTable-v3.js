@@ -539,7 +539,7 @@ class JSTable {
         if (this.commonClass) cell.classList.add(this.commonClass);
         if (!cell.getAttribute('colspan')) cell.setAttribute('colspan', colspan);
         if (!cell.getAttribute('rowspan')) cell.setAttribute('rowspan', rowspan);
-        cell.appendChild(document.createTextNode(text));
+        text instanceof HTMLElement ? cell.appendChild(text) : cell.appendChild(document.createTextNode(text));
 
         return cell;
     }
@@ -610,7 +610,7 @@ class JSTable {
     /**
      * Converts a HTML table into a Javascript array of Cells.
      * @param {HTMLTableElement} table The HTML table to convert.
-     * @returns {Array<Cell>} The Cells of the table.
+     * @returns {Array<Array<Cell>>} The Cells of the table.
      */
     htmlTableToJS(table) {
         var array = [];
@@ -630,7 +630,7 @@ class JSTable {
      * Transforms an array of Cells into an array of strings, 
      * just like it has to be when you convert a Javascript array into a HTML table.
      * @param {HTMLTableElement} table The HTML table to convert.
-     * @returns {Array<string>} The cells in a basic string.
+     * @returns {Array<Array<string>>} The cells in a basic string.
      */
     htmlTableToString(table) {
         var array = [];
