@@ -13,83 +13,37 @@
 
     <script src="JSTable-new.js"></script>
     <script>
-
-
         var jsArray = [
-            ["Nom", "Prénom", "Age"],
-            ["Gysemans.c*2", "Aucune donnée.r*2", "."],
-            [".", "Sarah", "17 ans"]
+            ["@Nom", "@Prénom", "@Age"],
+            ["Hawking.c*2", "Aucune donnée.r*2", "."],
+            [".", "Stephen", "<Random(0, 70)>"]
         ];
         
         var jstable = new JSTable();
-        var htmlArray = jstable.jsArrayToHtml(jsArray);
+        jstable.addCustomFunction({
+            name: 'Random',
+            callback: (args) => {
+                min = Math.ceil(parseInt(args[0]));
+                max = Math.floor(parseInt(args[1]));
+                return Math.floor(Math.random() * (max - min)) + min;
+            },
+            events: [
+                ['click', (e) => console.info(e)]
+            ],
+            attributes: [
+                ['class', 'random']
+            ]
+        });
+
+        var htmlArray = jstable.jsArrayToHtml(jsArray, "Example", "bottom");
         var container = document.getElementById('container');
         jstable.generate(htmlArray, container);
 
-        // var jsArray = [
-        //     ["X=xi", "5", "-5", "T", "E(X)"],
-        //     ["p(X=xi)", "0.5", "0.5", "{#1-1 + #1-2}", "=EXPECTATION(#0-1:0-2, #1-1:1-2)"]
-        // ];
+        var t = document.querySelector('table');
 
-        // var jstable = new JSTable();
-        // jstable.addFormula('EXPECTATION', function(values) {
-        //     var E = 0;
-        //     var x = [values[0], values[1]];
-        //     var p = [values[2], values[3]];
-        //     for (var i = 0; i < p.length; i++) {
-        //         E+=x[i]*p[i];
-        //     }
-        //     return E;
-        // });
-
-        // var container = document.getElementById('container');
-        // var htmlTable = jstable.jsArrayToHtml(jsArray);
-        // jstable.generate(htmlTable, container);
-
-        // var t = document.querySelector('table');
-        // var cell = jstable.selectCell(0, 0, t);
-        // cell.editable();
-        
-        // jstable.overwriteFunction('Editable', {
-        //     name: 'Edit',
-        //     attributes: [['class', 'editable'], ['contenteditable', 'true'], ['spellcheck', 'false']],
-        //     events: [
-        //         ['keyup', (e) => {
-        //             if (e.key === "Enter" || e.key === 13) {
-        //                 var table = jstable.translate(e.target).getTable();
-        //                 e.target.blur();
-        //                 jstable.refresh(table);
-        //             }
-        //         }]
-        //     ]
-        // });
-
-
-        // var jsArray = [
-        //     ["<Random(0, 10)>", "<Random(0, 10)>", "{#0-0 + #0-1}"]
-        // ];
-
-        // var jstable = new JSTable();
-        // jstable.addFunction({
-        //     name: 'Random',
-        //     callback: (args) => {
-        //         min = Math.ceil(parseInt(args[0]));
-        //         max = Math.floor(parseInt(args[1]));
-        //         return Math.floor(Math.random() * (max - min + 1)) + min;
-        //     },
-        //     attributes: [['id', 'test']],
-        //     events: [
-        //         ['click', (e) => console.info(e)]
-        //     ]
-        // });
-
-        // var container = document.getElementById('container');
-        // var htmlTable = jstable.jsArrayToHtml(jsArray);
-        // jstable.generate(htmlTable, container);
-
-        // var t = document.querySelector('table');
-        // jstable.addRow(["<Random(0, 1)>", "{#0-0}", "=SUM({#0-0}, {#0-1})"], t);
-        // jstable.read(t);
+        // #2-1 rather than #2-2 because the "." is ignored.
+        // Therefore, you only have 2 cells at y=2, so the last one is at x=1
+        console.log(jstable.interpretSequences("{#2-1 * 2}", t));
     </script>
 </body>
 </html>

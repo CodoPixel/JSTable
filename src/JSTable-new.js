@@ -1,4 +1,7 @@
 ;
+;
+;
+;
 class Cell {
     constructor(x, y, element, table) {
         this.x = x;
@@ -6,6 +9,7 @@ class Cell {
         this.element = element;
         this.table = table;
         this.container = this.table.parentElement;
+        this.attributes = [];
         try {
             for (var i = 0; i < this.element.getAttributeNames().length; i++) {
                 var name = this.element.getAttributeNames()[i];
@@ -28,8 +32,11 @@ class JSTable {
     constructor(commonClass) {
         this.regexColspan = /\.r\*(\d{1,})/;
         this.regexRowspan = /\.c\*(\d{1,})/;
-        this.regexMultipleSelector = /#(\d{1,}-\d{1,}:\d{1,}-\d{1,})|#(\d{1,}-\d{1,})/g;
+        this.regexMultipleSelector = /#(\d{1,}-\d{1,}:\d{1,}-\d{1,})/g;
+        this.regexBasicSelector = /#(\d{1,}-\d{1,})/g;
+        this.regexSelectors = /#(\d{1,}-\d{1,}:\d{1,}-\d{1,})|#(\d{1,}-\d{1,})/g;
         this.commonClass = commonClass;
+        this.customFunctions = [];
     }
     setCommonClass(commonClass) { this.commonClass = commonClass; }
     doesExist(x, y, table) {
@@ -50,6 +57,15 @@ class JSTable {
                 max = n;
         }
         return max;
+    }
+    getNumberOfCells(table) {
+        var s = 0;
+        for (var row of Array.from(table.rows)) {
+            for (var x of Array.from(row.cells)) {
+                s++;
+            }
+        }
+        return s;
     }
     selectCell(x, y, table) {
         try {
@@ -206,16 +222,15 @@ class JSTable {
         table.style.display = "none";
     }
     removeColumn(x, table) {
+        var cellsPerRow = this.getNumberOfCellsPerRow(table);
         for (var y = 0; y < table.rows.length; y++) {
-            try {
-                table.rows[y].deleteCell(x);
-            }
-            catch (e) {
-                return false;
-            }
+            var numberOfCells = table.rows[y].cells.length;
+            var diff = (cellsPerRow - numberOfCells);
+            table.rows[y].deleteCell(x - diff);
         }
         return true;
     }
+    // TODO : perhaps there is the same problem in removeRow: (see above)
     removeRow(y, table) {
         try {
             table.deleteRow(y);
@@ -267,6 +282,10 @@ class JSTable {
     }
     createCell(text, colspan, rowspan) {
         var cell = document.createElement('td');
+        if (text[0] === "@") {
+            cell = document.createElement('th');
+            text = text.substring(1, text.length);
+        }
         if (this.commonClass)
             cell.classList.add(this.commonClass);
         cell.setAttribute('colspan', colspan.toString());
@@ -327,29 +346,73 @@ class JSTable {
             x: x
         };
     }
+    addCustomFunction(customFunction) {
+        this.customFunctions.push(customFunction);
+    }
+    interpretCustomFunction(text) {
+        var newContent = text;
+        var attributes = [];
+        var events = [];
+        if (this.customFunctions.length > 0) {
+            for (var func of this.customFunctions) {
+                var regex = new RegExp('<' + func.name + '\(.*\)>|<' + func.name + '>', 'gm');
+                if (regex.test(text)) {
+                    if (func.callback) {
+                        var args = this._getArgumentsFrom(func.name, text);
+                        newContent = func.callback(args);
+                    }
+                    else {
+                        newContent = text.replace(regex, '');
+                    }
+                    if (func.attributes) {
+                        for (var attr of func.attributes) {
+                            attributes.push(attr);
+                        }
+                    }
+                    if (func.events) {
+                        for (var event of func.events) {
+                            events.push(event);
+                        }
+                    }
+                }
+            }
+        }
+        return {
+            newContent: newContent,
+            attributes: attributes,
+            events: events,
+        };
+    }
     getSequencesFrom(content) {
         return content.match(/\{(.*?)\}/gmi);
     }
     interpretSequences(text, table) {
+        if (!table)
+            throw new Error("interpretSequences(text, table): table is undefined.");
         var sequences = this.getSequencesFrom(text), sequence = '', newContent = text;
         if (!sequences)
             return text;
         for (sequence of sequences) {
-            var selectors = sequence.match(this.regexMultipleSelector);
-            for (var selector of selectors) {
-                if (!this.isMultipleSelector(selector)) {
-                    var data = this.readBasicSelector(selector);
-                    var cell = this.selectCell(data.x, data.y, table).getElement();
-                    newContent = newContent.replace(selector, cell.textContent);
-                }
-                else {
-                    throw new Error("interpretSequences(): cannot read a multiple selector inside a sequence.");
+            var selectors = sequence.match(this.regexSelectors);
+            if (selectors) {
+                for (var selector of selectors) {
+                    if (!this.isMultipleSelector(selector)) {
+                        var data = this.readBasicSelector(selector);
+                        var cell = this.selectCell(data.x, data.y, table);
+                        if (cell === undefined) {
+                            throw new Error("interpretSequences(): the cell (x=" + data.x + ", y=" + data.y + ") doesn't exist.");
+                        }
+                        newContent = newContent.replace(selector, cell.getElement().textContent);
+                    }
+                    else {
+                        throw new Error("interpretSequences(): cannot read a multiple selector inside a sequence.");
+                    }
                 }
             }
         }
         sequences = this.getSequencesFrom(newContent);
+        var clothes = /\{|\}/gm;
         for (sequence of sequences) {
-            var clothes = /\{|\}/gm;
             var nakedSequence = sequence.replace(clothes, '');
             try {
                 var evaluatedContent = eval(nakedSequence);
@@ -359,14 +422,46 @@ class JSTable {
                 console.info("Unable to evalute the content of a cell while interpreting it.");
             }
         }
-        return newContent;
+        return newContent.replace(clothes, '');
     }
-    jsArrayToHtml(arr) {
+    read(table) {
+        var y = 0, x = 0;
+        for (y = 0; y < table.rows.length; y++) {
+            for (x = 0; x < table.rows[y].cells.length; x++) {
+                var cell = table.rows[y].cells[x];
+                var result = this.interpretCustomFunction(cell.textContent);
+                table.rows[y].cells[x].textContent = result.newContent;
+                for (var attr of result.attributes) {
+                    table.rows[y].cells[x].setAttribute(attr[0], attr[1]);
+                }
+                for (var event of result.events) {
+                    var el = table.rows[y].cells[x];
+                    el.addEventListener(event[0], event[1]);
+                }
+            }
+        }
+        for (y = 0; y < table.rows.length; y++) {
+            for (x = 0; x < table.rows[y].cells.length; x++) {
+                var text = table.rows[y].cells[x].textContent;
+                table.rows[y].cells[x].textContent = this.interpretSequences(text, table);
+            }
+        }
+        return table;
+    }
+    jsArrayToHtml(arr, title, titlePos) {
         var table = document.createElement('table');
+        if (title) {
+            var caption = document.createElement('caption');
+            if (titlePos === "bottom") {
+                caption.style.captionSide = "bottom";
+            }
+            caption.appendChild(document.createTextNode(title));
+            table.appendChild(caption);
+        }
         for (var y = 0; y < arr.length; y++) {
             this.addRow(arr[y], table, -1);
         }
-        return table;
+        return this.read(table);
     }
     htmlTableToJS(table) {
         var array = [];

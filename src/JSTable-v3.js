@@ -716,7 +716,6 @@ class JSTable {
         for (var func of this.functions) {
             var regex = new RegExp('<' + func.name + '\(.*\)>|<' + func.name + '>', 'gm');
             if (regex.test(text)) {
-                console.log(text);
                 if (func.callback) {
                     var args = this._getArgumentsFrom(func.name, text);
                     newContent = func.callback(args);
