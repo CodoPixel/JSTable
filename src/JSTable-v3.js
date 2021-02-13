@@ -14,8 +14,8 @@ class Cell {
         this.x = x;
         this.y = y;
         this.element = element;
-        this.table = table || document.body;
-        this.container = this.table === document.body ? document.body : this.table.parentElement;
+        this.table = table;
+        this.container = this.table.parentElement;
 
         this.attributes = [];
         try {
@@ -25,7 +25,7 @@ class Cell {
                 this.attributes[this.attributes.length] = [name, value];
             }
         } catch(e) {
-            throw new Error("En error has occured while trying to create a cell from a HTML element.");
+            throw new Error("An error has occured while trying to create a cell from a HTML element.");
         }
     }
 
@@ -55,7 +55,7 @@ class Cell {
 
     /**
      * Gets all the attributes of the cell.
-     * @returns {Array<string>} The attributes and their names in a two-dimensional array: [[name, value]]
+     * @returns {Array<Array<string>>} The attributes and their names in a two-dimensional array: [[name, value]]
      */
     getAttributes() { return this.attributes; }
 
@@ -233,7 +233,7 @@ class JSTable {
      */
     selectSeveralRows(y1, y2, table) {
         if (y1 === y2) {
-            return this.selectRow(y1);
+            return this.selectRow(y1, table);
         }
         
         var isReversed = y1 > y2;
@@ -383,7 +383,6 @@ class JSTable {
     /**
      * Gets an instance of Cell from a basic cell in a table.
      * @param {HTMLTableDataCellElement} cell The cell to translate.
-     * @param {HTMLTableElement} table The table in which there is the cell.
      * @returns {Cell} The converted cell.
      */
     translate(cell) {
@@ -543,7 +542,7 @@ class JSTable {
     /**
      * Get the arguments of a custom function inside the content of a cell. Do not use this function.
      * @param {string} name The name of the custom function.
-     * @param {HTMLTableDataCellElement} cell The cell that is currently being generated
+     * @param {string} cell The cell that is currently being generated
      */
     _getArgumentsFrom(name, cell) {
         var regex = new RegExp('<' + name + '\((.*)\)>', 'gmi');
