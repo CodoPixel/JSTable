@@ -350,11 +350,11 @@ class JSTable {
         }
     }
 
-    isMultipleSelector(selector:string): boolean {
+    public isMultipleSelector(selector:string): boolean {
         return this.regexMultipleSelector.test(selector);
     }
 
-    readMultipleSelector(selector: string) {
+    public readMultipleSelector(selector: string): ComplexPos {
         var matches = selector.match(/(\d{1,})/g);
         var y1 = parseInt(matches[0]),
             x1 = parseInt(matches[1]),
@@ -366,5 +366,108 @@ class JSTable {
             y2:y2,
             x2:x2
         };
+    }
+
+    public readBasicSelector(selector: string): Pos {
+        var matches = selector.match(/(\d{1,})/g);
+        var y = parseInt(matches[0]),
+            x = parseInt(matches[1]);
+        return {
+            y:y,
+            x:x
+        };
+    }
+
+    public getSequencesFrom(content: string): string[] {
+        return content.match(/\{(.*?)\}/gmi);
+    }
+
+    public interpretSequences(text: string, table: HTMLTableElement) {
+        var sequences = this.getSequencesFrom(text),
+            sequence = '',
+            newContent = text;
+        
+        if (!sequences) return text;
+
+        for (sequence of sequences) {
+            var selectors = sequence.match(this.regexMultipleSelector);
+            for (var selector of selectors) {
+                if (!this.isMultipleSelector(selector)) {
+                    var data = this.readBasicSelector(selector);
+                    var cell = this.selectCell(data.x, data.y, table).getElement();
+                    newContent = newContent.replace(selector, cell.textContent);
+                } else {
+                    throw new Error("interpretSequences(): cannot read a multiple selector inside a sequence.");
+                }
+            }
+        }
+
+        sequences = this.getSequencesFrom(newContent);
+        for (sequence of sequences) {
+            var clothes = /\{|\}/gm;
+            var nakedSequence = sequence.replace(clothes, '');
+            try {
+                var evaluatedContent: any = eval(nakedSequence);
+                newContent = newContent.replace(sequence, evaluatedContent);
+            } catch(e) {
+                console.info("Unable to evalute the content of a cell while interpreting it.");
+            }
+        }
+
+        return newContent;
+    }
+
+    public jsArrayToHtml(arr:string[][]): HTMLTableElement {
+        var table = document.createElement('table');
+        for (var y = 0; y < arr.length; y++) {
+            this.addRow(arr[y], table, -1);
+        }
+
+        return table;
+    }
+
+    public htmlTableToJS(table: HTMLTableElement): Cell[][] {
+        var array: Cell[][] = [];
+
+        var rows = table.rows;
+        for (var y = 0; y < rows.length; y++) {
+            array[y] = [];
+            for (var x = 0; x < rows[y].children.length; x++) {
+                var el = (rows[y].children[x] as HTMLTableDataCellElement);
+                array[x][x] = new Cell(x, y, el, table);
+            }
+        }
+
+        return array;
+    }
+
+    public htmlTableToString(table: HTMLTableElement): string[][] {
+        var array: string[][] = [];
+        var rows = table.rows;
+        var cellsPerRow = this.getNumberOfCellsPerRow(table);
+
+        for (var y = 0; y < rows.length; y++) {
+            array[y] = [];
+            for (var x = 0; x < cellsPerRow; x++) {
+                var cell = (rows[y].children[x] as HTMLTableDataCellElement);
+                if (cell === undefined) {
+                    array[y][x] = ".";
+                } else {
+                    var content = cell.textContent;
+                    var rowspan = parseInt(cell.getAttribute("rowspan"));
+                    var colspan = parseInt(cell.getAttribute("colspan"));
+                    if (rowspan > 1) content += ".c*" + rowspan;
+                    if (colspan > 1) content += ".r*" + colspan;
+
+                    array[y][x] = content;
+                }
+            }
+        }
+
+        return array;
+    }
+
+    public generate(table: HTMLTableElement, container: HTMLElement): void {
+        container.appendChild(table);
     }
 }

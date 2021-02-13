@@ -779,7 +779,7 @@ class JSTable {
 
         sequences = this.getSequencesFrom(newContent);
         for (sequence of sequences) {
-            var clothes = /\{|\}/gm
+            var clothes = /\{|\}/gm;
             var nakedSequence = sequence.replace(clothes, "");
             try {
                 var evaluatedContent = eval(nakedSequence);

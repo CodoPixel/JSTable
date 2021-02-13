@@ -11,32 +11,44 @@
 
     <div id="container"></div>
 
-    <script src="JSTable-v3.js"></script>
+    <script src="JSTable-new.js"></script>
     <script>
 
+
         var jsArray = [
-            ["X=xi", "5", "-5", "T", "E(X)"],
-            ["p(X=xi)", "0.5", "0.5", "{#1-1 + #1-2}", "=EXPECTATION(#0-1:0-2, #1-1:1-2)"]
+            ["Nom", "Prénom", "Age"],
+            ["Gysemans.c*2", "Aucune donnée.r*2", "."],
+            [".", "Sarah", "17 ans"]
         ];
-
+        
         var jstable = new JSTable();
-        jstable.addFormula('EXPECTATION', function(values) {
-            var E = 0;
-            var x = [values[0], values[1]];
-            var p = [values[2], values[3]];
-            for (var i = 0; i < p.length; i++) {
-                E+=x[i]*p[i];
-            }
-            return E;
-        });
-
+        var htmlArray = jstable.jsArrayToHtml(jsArray);
         var container = document.getElementById('container');
-        var htmlTable = jstable.jsArrayToHtml(jsArray);
-        jstable.generate(htmlTable, container);
+        jstable.generate(htmlArray, container);
 
-        var t = document.querySelector('table');
-        var cell = jstable.selectCell(0, 0, t);
-        cell.editable();
+        // var jsArray = [
+        //     ["X=xi", "5", "-5", "T", "E(X)"],
+        //     ["p(X=xi)", "0.5", "0.5", "{#1-1 + #1-2}", "=EXPECTATION(#0-1:0-2, #1-1:1-2)"]
+        // ];
+
+        // var jstable = new JSTable();
+        // jstable.addFormula('EXPECTATION', function(values) {
+        //     var E = 0;
+        //     var x = [values[0], values[1]];
+        //     var p = [values[2], values[3]];
+        //     for (var i = 0; i < p.length; i++) {
+        //         E+=x[i]*p[i];
+        //     }
+        //     return E;
+        // });
+
+        // var container = document.getElementById('container');
+        // var htmlTable = jstable.jsArrayToHtml(jsArray);
+        // jstable.generate(htmlTable, container);
+
+        // var t = document.querySelector('table');
+        // var cell = jstable.selectCell(0, 0, t);
+        // cell.editable();
         
         // jstable.overwriteFunction('Editable', {
         //     name: 'Edit',
