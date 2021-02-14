@@ -279,8 +279,6 @@ class JSTable {
         return true;
     }
 
-    // TODO : perhaps there is the same problem in removeRow: (see above)
-
     public removeRow(y: number, table:HTMLTableElement): boolean {
         try {
             table.deleteRow(y);
@@ -558,7 +556,7 @@ class JSTable {
             array[y] = [];
             for (var x = 0; x < rows[y].children.length; x++) {
                 var el = (rows[y].children[x] as HTMLTableCellElement);
-                array[x][x] = new Cell(x, y, el, table);
+                array[y][x] = new Cell(x, y, el, table);
             }
         }
 
@@ -575,7 +573,7 @@ class JSTable {
             for (var x = 0; x < cellsPerRow; x++) {
                 var cell = (rows[y].children[x] as HTMLTableCellElement);
                 if (cell === undefined) {
-                    array[y][x] = ".";
+                    continue;
                 } else {
                     var content = cell.textContent;
                     var rowspan = parseInt(cell.getAttribute("rowspan"));

@@ -230,7 +230,6 @@ class JSTable {
         }
         return true;
     }
-    // TODO : perhaps there is the same problem in removeRow: (see above)
     removeRow(y, table) {
         try {
             table.deleteRow(y);
@@ -470,7 +469,7 @@ class JSTable {
             array[y] = [];
             for (var x = 0; x < rows[y].children.length; x++) {
                 var el = rows[y].children[x];
-                array[x][x] = new Cell(x, y, el, table);
+                array[y][x] = new Cell(x, y, el, table);
             }
         }
         return array;
@@ -484,7 +483,7 @@ class JSTable {
             for (var x = 0; x < cellsPerRow; x++) {
                 var cell = rows[y].children[x];
                 if (cell === undefined) {
-                    array[y][x] = ".";
+                    continue;
                 }
                 else {
                     var content = cell.textContent;
