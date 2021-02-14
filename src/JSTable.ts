@@ -1,357 +1,426 @@
-;
-;
-;
-;
+interface Pos {
+    x?: number,
+    y?: number
+};
+
+interface ComplexPos {
+    x1?: number,
+    y1?: number,
+    x2?: number,
+    y2?: number
+};
+
+interface CustomFunction {
+    name: string,
+    callback?: Function,
+    attributes?: string[][],
+    events?: [string, Function][]
+};
+
+interface CustomFunctionInterpretation {
+    newContent: string,
+    attributes: string[][],
+    events: [string, Function][]
+};
+
 class Cell {
-    constructor(x, y, element, table) {
+    private x:number;
+    private y:number;
+    private element:HTMLTableCellElement;
+    private table:HTMLTableElement;
+    private container:HTMLElement;
+    private attributes:string[][];
+
+    constructor(x:number, y:number, element:HTMLTableCellElement, table:HTMLTableElement) {
         this.x = x || 0;
         this.y = y || 0;
         this.element = element;
         this.table = table;
         this.container = this.table.parentElement;
         this.attributes = [];
+
         try {
             for (var i = 0; i < this.element.getAttributeNames().length; i++) {
-                var name = this.element.getAttributeNames()[i];
-                var value = this.element.getAttribute(name);
+                var name:string = this.element.getAttributeNames()[i];
+                var value:string = this.element.getAttribute(name);
                 this.attributes.push([name, value]);
             }
-        }
-        catch (e) {
+        } catch(e) {
             throw new Error("An error has occured while trying to create a cell from a HTML element.");
         }
     }
-    getPos() { return { x: this.x, y: this.y }; }
-    getElement() { return this.element; }
-    getTable() { return this.table; }
-    getContainer() { return this.container; }
-    getAttributes() { return this.attributes; }
-    clearContent() { this.element.textContent = ""; }
+
+    getPos(): Pos { return {x:this.x, y:this.y}; }
+    getElement(): HTMLTableCellElement { return this.element; }
+    getTable(): HTMLTableElement { return this.table; }
+    getContainer(): HTMLElement { return this.container; }
+    getAttributes(): string[][] { return this.attributes; }
+
+    clearContent(): void { this.element.textContent = ""; }
 }
+
 class JSTable {
-    constructor(commonClass) {
-        this.regexColspan = /\.r\*(\d{1,})/;
-        this.regexRowspan = /\.c\*(\d{1,})/;
-        this.regexMultipleSelector = /#(\d{1,}-\d{1,}:\d{1,}-\d{1,})/g;
-        this.regexBasicSelector = /#(\d{1,}-\d{1,})/g;
-        this.regexSelectors = /#(\d{1,}-\d{1,}:\d{1,}-\d{1,})|#(\d{1,}-\d{1,})/g;
+    private commonClass:string;
+    private customFunctions:CustomFunction[];
+    private regexColspan:RegExp = /\.r\*(\d{1,})/;
+    private regexRowspan:RegExp = /\.c\*(\d{1,})/;
+    private regexMultipleSelector:RegExp = /#(\d{1,}-\d{1,}:\d{1,}-\d{1,})/g;
+    private regexBasicSelector:RegExp = /#(\d{1,}-\d{1,})/g;
+    private regexSelectors:RegExp = /#(\d{1,}-\d{1,}:\d{1,}-\d{1,})|#(\d{1,}-\d{1,})/g;
+
+    constructor(commonClass:string) {
         this.commonClass = commonClass;
         this.customFunctions = [];
     }
-    setCommonClass(commonClass) { this.commonClass = commonClass; }
-    doesExist(x, y, table) {
+
+    public setCommonClass(commonClass:string):void { this.commonClass = commonClass; }
+
+    public doesExist(x:number, y:number, table:HTMLTableElement): boolean {
         try {
             var cell = table.rows[y].childNodes[x];
             return cell !== undefined;
-        }
-        catch (e) {
+        } catch(e) {
             return false;
         }
     }
-    getNumberOfCellsPerRow(table) {
+
+    public getNumberOfCellsPerRow(table:HTMLTableElement): number {
         var max = 0;
         var rows = Array.from(table.rows);
         for (var line of rows) {
             var n = line.children.length;
-            if (n > max)
-                max = n;
+            if (n > max) max = n;
         }
         return max;
     }
-    getNumberOfCells(table) {
+
+    public getNumberOfCells(table:HTMLTableElement): number {
         var s = 0;
         for (var row of Array.from(table.rows)) {
             for (var x of Array.from(row.cells)) {
                 s++;
             }
         }
+
         return s;
     }
-    selectCell(x, y, table) {
+
+    public selectCell(x:number, y:number, table:HTMLTableElement): Cell {
         try {
             var cell = table.rows[y].children[x];
-            return cell === undefined ? undefined : new Cell(x, y, cell, table);
-        }
-        catch (e) {
+            return cell === undefined ? undefined : new Cell(x, y, (cell as HTMLTableCellElement), table);
+        } catch(e) {
             return undefined;
         }
     }
-    selectRow(y, table) {
-        var cells = [];
+
+    public selectRow(y:number, table:HTMLTableElement): Cell[] {
+        var cells: Cell[] = [];
         var row = table.rows[y];
         for (var x = 0; x < row.childElementCount; x++) {
-            cells.push(new Cell(x, y, row.children[x], table));
+            cells.push(new Cell(x, y, (row.children[x] as HTMLTableCellElement), table));
         }
+
         return cells;
     }
-    selectSeveralRows(y1, y2, table) {
-        var i = 0;
-        var isReversed = y1 > y2;
+
+    public selectSeveralRows(y1:number, y2:number, table:HTMLTableElement): Cell[][] {
+        var i:number = 0;
+        var isReversed:boolean = y1 > y2;
         if (isReversed) {
             [y1, y2] = [y2, y1];
         }
+
         var cells = [];
         for (i = y1; i <= y2; i++) {
             cells.push(this.selectRow(i, table));
         }
+
         if (isReversed) {
-            for (i = 0; i < cells.length; i++)
-                cells[i].reverse();
+            for (i = 0; i < cells.length; i++) cells[i].reverse();
             return cells.reverse();
-        }
-        else {
+        } else {
             return cells;
         }
     }
-    selectColumn(x, table) {
-        var cells = [];
+
+    public selectColumn(x:number, table:HTMLTableElement): Cell[] {
+        var cells: Cell[] = [];
         for (var y = 0; y < table.rows.length; y++) {
-            var cell = table.rows[y].children[x];
+            var cell = (table.rows[y].children[x] as HTMLTableCellElement);
             cells.push(new Cell(x, y, cell, table));
         }
+
         return cells;
     }
-    selectSeveralColumns(x1, x2, table) {
-        var i = 0;
-        var isReversed = x1 > x2;
+
+    public selectSeveralColumns(x1:number, x2:number, table:HTMLTableElement): Cell[][] {
+        var i:number = 0;
+        var isReversed:boolean = x1 > x2;
         if (isReversed) {
             [x1, x2] = [x2, x1];
         }
+
         var cells = [];
         for (i = x1; i <= x2; i++) {
             cells.push(this.selectColumn(i, table));
         }
+
         if (isReversed) {
-            for (i = 0; i < cells.length; i++)
-                cells[i].reverse();
+            for (i = 0; i < cells.length; i++) cells[i].reverse();
             return cells.reverse();
-        }
-        else {
+        } else {
             return cells;
         }
     }
-    selectMultipleCells(from, to, table) {
-        var i = 0;
-        var cells = [];
-        if (from.y === undefined)
-            from.y = 0;
-        if (from.x === undefined)
-            from.x = 0;
-        if (to.y === undefined)
-            to.y = 0;
-        if (to.x === undefined)
-            to.x = 0;
+
+    public selectMultipleCells(from:Pos, to:Pos, table:HTMLTableElement): Cell[] {
+        var i:number = 0;
+        var cells: Cell[] = [];
+
+        if (from.y === undefined) from.y = 0;
+        if (from.x === undefined) from.x = 0;
+        if (to.y === undefined) to.y = 0;
+        if (to.x === undefined) to.x = 0;
+
         // if y1 > y2 => must reverse OR if y1 == y2 AND x1 > x2 => must reverse
-        var isReversed = (from.y > to.y) || (from.y === to.y && from.x > to.x);
+        var isReversed:boolean = (from.y > to.y) || (from.y === to.y && from.x > to.x);
         if (isReversed) {
             [from.x, to.x, from.y, to.y] = [to.x, from.x, to.y, from.y];
         }
+
         // selection
         if (from.y === to.y) {
-            var row = table.rows[from.y];
+            var row: HTMLTableRowElement = table.rows[from.y];
             if (row) {
-                if (to.x >= row.childElementCount)
-                    to.x = row.childElementCount - 1;
+                if (to.x >= row.childElementCount) to.x = row.childElementCount - 1;
                 for (i = from.x; i <= to.x; i++) {
-                    var el = row.children[i];
+                    var el = (row.children[i] as HTMLTableCellElement);
                     cells.push(new Cell(i, from.y, el, table));
                 }
-            }
-            else {
+            } else {
                 return cells;
             }
-        }
-        else if (from.y < to.y) {
+        } else if (from.y < to.y) {
             while (!(from.y > to.y)) {
-                var row = table.rows[from.y];
+                var row: HTMLTableRowElement = table.rows[from.y];
                 if (row) {
                     var endingPoint = to.x;
                     if (from.y === to.y) {
                         // if this is the last line,
                         // then we have to stop to x2
                         // however, if x2 >= number of cells, then we select every cell of that row again
-                        if (to.x >= row.childElementCount)
-                            endingPoint = row.childElementCount - 1;
-                    }
-                    else {
+                        if (to.x >= row.childElementCount) endingPoint = row.childElementCount - 1;
+                    } else {
                         // if this is not the last line,
                         // then we select every cell of that row
                         endingPoint = row.childElementCount - 1;
                     }
                     for (i = from.x; i <= endingPoint; i++) {
-                        var el = row.children[i];
+                        var el = (row.children[i] as HTMLTableCellElement);
                         cells.push(new Cell(i, from.y, el, table));
                     }
                     from.y++;
-                }
-                else {
+                } else {
                     break;
                 }
             }
         }
+
         return isReversed ? cells.reverse() : cells;
     }
-    translate(cell) {
+
+    public translate(cell:HTMLTableCellElement): Cell {
         var row = cell.parentElement;
         var table = row.parentElement;
-        if (table instanceof HTMLTableSectionElement)
-            table = row.parentElement.parentElement;
+        if (table instanceof HTMLTableSectionElement) table = row.parentElement.parentElement;
+
         var x = 0;
         var y = 0;
+
         for (var td of Array.from(row.children)) {
             if (td === cell) {
                 break;
             }
             x++;
         }
+
         for (var tr of Array.from(table.children)) {
             if (tr === row) {
                 break;
             }
             y++;
         }
-        return new Cell(x, y, cell, table);
+
+        return new Cell(x, y, cell, (table as HTMLTableElement));
     }
-    isCell(cell) {
+
+    public isCell(cell:any): boolean {
         return cell instanceof Cell;
     }
-    deleteTable(table) {
+
+    public deleteTable(table:HTMLTableElement): void {
         while (table.firstChild) {
             table.removeChild(table.firstChild);
         }
+
         table.style.display = "none";
     }
-    removeColumn(x, table) {
-        var cellsPerRow = this.getNumberOfCellsPerRow(table);
+
+    public removeColumn(x:number, table:HTMLTableElement): boolean {
+        var cellsPerRow: number = this.getNumberOfCellsPerRow(table);
+
         for (var y = 0; y < table.rows.length; y++) {
-            var numberOfCells = table.rows[y].cells.length;
-            var diff = (cellsPerRow - numberOfCells);
+            var numberOfCells: number = table.rows[y].cells.length;
+            var diff: number = (cellsPerRow - numberOfCells);
             table.rows[y].deleteCell(x - diff);
         }
+
         return true;
     }
-    removeRow(y, table) {
+
+    public removeRow(y:number, table:HTMLTableElement): boolean {
         try {
             table.deleteRow(y);
             return true;
-        }
-        catch (e) {
+        } catch(e) {
             return false;
         }
     }
-    removeCellAt(x, y, table) {
+
+    public removeCellAt(x:number, y:number, table:HTMLTableElement): boolean {
         try {
             table.rows[y].deleteCell(x);
             return true;
-        }
-        catch (e) {
+        } catch(e) {
             return false;
         }
     }
-    removeCell(cell) {
+
+    public removeCell(cell:Cell): void {
         var element = cell.getElement();
         element.parentElement.removeChild(element);
     }
-    _getArgumentsFrom(name, text) {
+
+    private _getArgumentsFrom(name:string, text:string): string[] {
         var regex = new RegExp('<' + name + '\((.*)\)>', 'gmi');
         text = text.replace(', ', ',');
         text.replace(regex, '$1');
         return RegExp.$1.replace(/\(|\)/gm, '').split(',');
     }
-    _getColspanIdentifierFrom(text) {
+
+    private _getColspanIdentifierFrom(text:string): number {
         var colspan = 1;
         if (this.regexColspan.test(text) === true) {
             text.replace(this.regexColspan, '$1');
             colspan = parseInt(RegExp.$1);
         }
+
         return colspan;
     }
-    _getRowspanIdentifierFrom(text) {
+
+    private _getRowspanIdentifierFrom(text:string): number {
         var rowspan = 1;
         if (this.regexRowspan.test(text) === true) {
             text.replace(this.regexRowspan, '$1');
             rowspan = parseInt(RegExp.$1);
         }
+
         return rowspan;
     }
-    _clearAllIdentifiersFrom(text) {
+
+    private _clearAllIdentifiersFrom(text:string): string {
         text = text.replace(this.regexColspan, '');
         text = text.replace(this.regexRowspan, '');
         return text;
     }
-    createCell(text, colspan = 1, rowspan = 1) {
+
+    public createCell(text: string, colspan:number=1, rowspan:number=1): HTMLTableCellElement {
         var cell = document.createElement('td');
+
         if (text[0] === "@") {
             cell = document.createElement('th');
             text = text.substring(1, text.length);
         }
-        if (this.commonClass)
-            cell.classList.add(this.commonClass);
+
+        if (this.commonClass) cell.classList.add(this.commonClass);
         cell.setAttribute('colspan', colspan.toString());
         cell.setAttribute('rowspan', rowspan.toString());
         cell.appendChild(document.createTextNode(text));
+
         return cell;
     }
-    addColumn(column, table, index = -1) {
+
+    public addColumn(column:string[], table:HTMLTableElement, index:number=-1): void {
         for (var y = 0; y < column.length; y++) {
             var text = column[y];
-            if (text === ".")
-                continue;
+            if (text === ".") continue;
+
             var colspan = this._getColspanIdentifierFrom(text);
             var rowspan = this._getRowspanIdentifierFrom(text);
-            if (colspan > 1 || rowspan > 1)
-                text = this._clearAllIdentifiersFrom(text);
+            if (colspan > 1 || rowspan > 1) text = this._clearAllIdentifiersFrom(text);
+
             var newCell = this.createCell(text, colspan, rowspan);
             if (index === -1) {
                 table.rows[y].appendChild(newCell);
-            }
-            else {
+            } else {
                 table.rows[y].insertBefore(newCell, table.rows[y].children[index]); // if ref undefined => index=-1
             }
         }
     }
-    addRow(row, table, index = -1) {
+
+    public addRow(row:string[], table:HTMLTableElement, index:number=-1): void {
         var newRow = table.insertRow(index);
         for (var x = 0; x < row.length; x++) {
             var text = row[x];
-            if (text === ".")
-                continue;
+            if (text === ".") continue;
+
             var colspan = this._getColspanIdentifierFrom(text);
             var rowspan = this._getRowspanIdentifierFrom(text);
-            if (colspan > 1 || rowspan > 1)
-                text = this._clearAllIdentifiersFrom(text);
+            if (colspan > 1 || rowspan > 1) text = this._clearAllIdentifiersFrom(text);
+
             var newCell = this.createCell(text, colspan, rowspan);
             newRow.appendChild(newCell);
         }
     }
-    isMultipleSelector(selector) {
+
+    public isMultipleSelector(selector:string): boolean {
         return this.regexMultipleSelector.test(selector);
     }
-    readMultipleSelector(selector) {
+
+    public readMultipleSelector(selector:string): ComplexPos {
         var matches = selector.match(/(\d{1,})/g);
-        var y1 = parseInt(matches[0]), x1 = parseInt(matches[1]), y2 = parseInt(matches[2]), x2 = parseInt(matches[3]);
+        var y1 = parseInt(matches[0]),
+            x1 = parseInt(matches[1]),
+            y2 = parseInt(matches[2]),
+            x2 = parseInt(matches[3]);
         return {
-            y1: y1,
-            x1: x1,
-            y2: y2,
-            x2: x2
+            y1:y1,
+            x1:x1,
+            y2:y2,
+            x2:x2
         };
     }
-    readBasicSelector(selector) {
+
+    public readBasicSelector(selector:string): Pos {
         var matches = selector.match(/(\d{1,})/g);
-        var y = parseInt(matches[0]), x = parseInt(matches[1]);
+        var y = parseInt(matches[0]),
+            x = parseInt(matches[1]);
         return {
-            y: y,
-            x: x
+            y:y,
+            x:x
         };
     }
-    addCustomFunction(customFunction) {
+
+    public addCustomFunction(customFunction:CustomFunction): void {
         this.customFunctions.push(customFunction);
     }
-    interpretCustomFunction(text) {
+
+    public interpretCustomFunction(text:string): CustomFunctionInterpretation {
         var newContent = text;
-        var attributes = [];
-        var events = [];
+        var attributes: string[][] = [];
+        var events: [string, Function][] = [];
+
         if (this.customFunctions.length > 0) {
             for (var func of this.customFunctions) {
                 var regex = new RegExp('<' + func.name + '\(.*\)>|<' + func.name + '>', 'gm');
@@ -359,15 +428,16 @@ class JSTable {
                     if (func.callback) {
                         var args = this._getArgumentsFrom(func.name, text);
                         newContent = func.callback(args);
-                    }
-                    else {
+                    } else {
                         newContent = text.replace(regex, '');
                     }
+
                     if (func.attributes) {
                         for (var attr of func.attributes) {
                             attributes.push(attr);
                         }
                     }
+
                     if (func.events) {
                         for (var event of func.events) {
                             events.push(event);
@@ -376,21 +446,27 @@ class JSTable {
                 }
             }
         }
+
         return {
             newContent: newContent,
             attributes: attributes,
             events: events,
         };
     }
-    getSequencesFrom(content) {
+
+    public getSequencesFrom(content:string): string[] {
         return content.match(/\{(.*?)\}/gmi);
     }
-    interpretSequences(text, table) {
-        if (!table)
-            throw new Error("interpretSequences(text, table): table is undefined.");
-        var sequences = this.getSequencesFrom(text), sequence = '', newContent = text;
-        if (!sequences)
-            return text;
+
+    public interpretSequences(text:string, table:HTMLTableElement): string {
+        if (!table) throw new Error("interpretSequences(text, table): table is undefined.");
+
+        var sequences = this.getSequencesFrom(text),
+            sequence = '',
+            newContent = text;
+        
+        if (!sequences) return text;
+
         for (sequence of sequences) {
             var selectors = sequence.match(this.regexSelectors);
             if (selectors) {
@@ -402,29 +478,32 @@ class JSTable {
                             throw new Error("interpretSequences(): the cell (x=" + data.x + ", y=" + data.y + ") doesn't exist.");
                         }
                         newContent = newContent.replace(selector, cell.getElement().textContent);
-                    }
-                    else {
+                    } else {
                         throw new Error("interpretSequences(): cannot read a multiple selector inside a sequence.");
                     }
                 }
             }
         }
+
         sequences = this.getSequencesFrom(newContent);
         var clothes = /\{|\}/gm;
         for (sequence of sequences) {
             var nakedSequence = sequence.replace(clothes, '');
             try {
-                var evaluatedContent = eval(nakedSequence);
+                var evaluatedContent: any = eval(nakedSequence);
                 newContent = newContent.replace(sequence, evaluatedContent);
-            }
-            catch (e) {
+            } catch(e) {
                 console.info("Unable to evalute the content of a cell while interpreting it.");
             }
         }
+
         return newContent.replace(clothes, '');
     }
-    read(table) {
-        var y = 0, x = 0;
+
+    public read(table:HTMLTableElement): HTMLTableElement {
+        var y = 0,
+            x = 0;
+        
         for (y = 0; y < table.rows.length; y++) {
             for (x = 0; x < table.rows[y].cells.length; x++) {
                 var cell = table.rows[y].cells[x];
@@ -434,21 +513,25 @@ class JSTable {
                     table.rows[y].cells[x].setAttribute(attr[0], attr[1]);
                 }
                 for (var event of result.events) {
-                    var el = table.rows[y].cells[x];
+                    var el: any = table.rows[y].cells[x];
                     el.addEventListener(event[0], event[1]);
                 }
             }
         }
+
         for (y = 0; y < table.rows.length; y++) {
             for (x = 0; x < table.rows[y].cells.length; x++) {
                 var text = table.rows[y].cells[x].textContent;
                 table.rows[y].cells[x].textContent = this.interpretSequences(text, table);
             }
         }
+
         return table;
     }
-    jsArrayToHtml(arr, title, titlePos) {
+
+    public jsArrayToHtml(arr:string[][], title?:string, titlePos?:string): HTMLTableElement {
         var table = document.createElement('table');
+
         if (title) {
             var caption = document.createElement('caption');
             if (titlePos === "bottom") {
@@ -457,50 +540,58 @@ class JSTable {
             caption.appendChild(document.createTextNode(title));
             table.appendChild(caption);
         }
+
         table.classList.add("generated-jstable");
+
         for (var y = 0; y < arr.length; y++) {
             this.addRow(arr[y], table, -1);
         }
+
         return this.read(table);
     }
-    htmlTableToJS(table) {
-        var array = [];
+
+    public htmlTableToJS(table:HTMLTableElement): Cell[][] {
+        var array: Cell[][] = [];
+
         var rows = table.rows;
         for (var y = 0; y < rows.length; y++) {
             array[y] = [];
             for (var x = 0; x < rows[y].children.length; x++) {
-                var el = rows[y].children[x];
+                var el = (rows[y].children[x] as HTMLTableCellElement);
                 array[y][x] = new Cell(x, y, el, table);
             }
         }
+
         return array;
     }
-    htmlTableToString(table) {
-        var array = [];
+
+    public htmlTableToString(table:HTMLTableElement): string[][] {
+        var array: string[][] = [];
         var rows = table.rows;
         var cellsPerRow = this.getNumberOfCellsPerRow(table);
+
         for (var y = 0; y < rows.length; y++) {
             array[y] = [];
             for (var x = 0; x < cellsPerRow; x++) {
-                var cell = rows[y].children[x];
+                var cell = (rows[y].children[x] as HTMLTableCellElement);
                 if (cell === undefined) {
                     continue;
-                }
-                else {
+                } else {
                     var content = cell.textContent;
                     var rowspan = parseInt(cell.getAttribute("rowspan"));
                     var colspan = parseInt(cell.getAttribute("colspan"));
-                    if (rowspan > 1)
-                        content += ".c*" + rowspan;
-                    if (colspan > 1)
-                        content += ".r*" + colspan;
+                    if (rowspan > 1) content += ".c*" + rowspan;
+                    if (colspan > 1) content += ".r*" + colspan;
+
                     array[y][x] = content;
                 }
             }
         }
+
         return array;
     }
-    generate(table, container = document.body) {
+
+    public generate(table:HTMLTableElement, container:HTMLElement=document.body): void {
         container.appendChild(table);
     }
 }
