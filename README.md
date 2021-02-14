@@ -4,7 +4,7 @@ A complete tool to make the most of HTML tables in Javascript. JSTable offers a 
 
 ## Get Started
 
-The source code is available in TypeScript & JavaScript in the `src` folder. Copy the source code and implement it in your project:
+The source code is available in TypeScript & Javascript in the `src` folder. Copy the source code and implement it in your project:
 
 ```
 <script src="jstable.js"></script>
@@ -14,7 +14,7 @@ Now, you can use JSTable!
 
 ## How to create a table ?
 
-First of all, let's create a javascript array:
+First of all, let's create a two-dimensional Javascript array:
 
 ```
 var jsArray = [
@@ -24,13 +24,13 @@ var jsArray = [
 ];
 ```
 
-Now that our JavaScript table is ready, we want to generate the corresponding HTML table:
+Now that our Javascript table is ready, we want to generate the corresponding HTML table:
 
 ```
 // create an instance of JSTable
 var jstable = new JSTable();
 
-// create a HTML table from the javascript array
+// create a HTML table from the Javascript array
 // "Example" is the title (caption) of the table
 // "bottom" is the position of the title (caption-side property)
 var htmlArray = jstable.jsArrayToHtml(jsArray, "Example", "bottom");
@@ -107,16 +107,17 @@ In order to select cells, you have a lot of built-in methods:
 
 |Method|return value|Description|
 |------|------------|-----------|
-|`selectCell(x:number, y:number, table:HTMLTableElement)`|`Cell` or undefined|Select a cell in a table according to precise coordinates. |
+|`selectCell(x:number, y:number, table:HTMLTableElement)`|`Cell`|Select a cell in a table according to precise coordinates. |
 |`selectRow(y:number, table:HTMLTableElement)`|`Cell[]`|Selects all the cells from a given row in a table according to its y-axis.|
-|`selectSeveralRow(y1:number, y2:number, table:HTMLTableElement)`|`Cell[][]`|Selects all the cells from several rows in a table.|
+|`selectSeveralRows(y1:number, y2:number, table:HTMLTableElement)`|`Cell[][]`|Selects all the cells from several rows in a table.|
 |`selectColumn(x:number, table:HTMLTableElement)`|`Cell[]`|Selects all the cells from a given column in a table.|
 |`selectSeveralColumns(x1:number, x2:number, table:HTMLTableElement)`|`Cell[][]`|Selects all the cells from several columns in a table.|
-|`selectMultipleCells(from:Pos, to:Pos, table:HTMLTableElement)`|`Cell[]`|Selects several cells (begin to end or end to begin) in a table.|
+|`selectMultipleCells(from:Pos, to:Pos, table:HTMLTableElement)`|`Cell[]`|Selects several cells (beginning to end or end to beginning) in a table.|
 
 Theses methods return instances of `Cell`. A Cell is an object with theses properties:
 
 |Method|return value|Description|
+|------|------------|-----------|
 |`getPos()`|`Pos`|Gets the cell's position.|
 |`getElement()`|`HTMLTableCellElement`|Gets the cell as a HTML element.|
 |`getTable()`|`HTMLTableElement`|Gets the table in which the cell is contained.|
