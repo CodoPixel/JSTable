@@ -457,6 +457,7 @@ class JSTable {
             caption.appendChild(document.createTextNode(title));
             table.appendChild(caption);
         }
+        table.classList.add("generated-jstable");
         for (var y = 0; y < arr.length; y++) {
             this.addRow(arr[y], table, -1);
         }
@@ -499,7 +500,7 @@ class JSTable {
         }
         return array;
     }
-    generate(table, container) {
+    generate(table, container = document.body) {
         container.appendChild(table);
     }
 }

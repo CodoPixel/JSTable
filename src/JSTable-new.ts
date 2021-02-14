@@ -297,7 +297,7 @@ class JSTable {
         }
     }
 
-    public removeCell(cell: Cell) {
+    public removeCell(cell: Cell): void {
         var element = cell.getElement();
         element.parentElement.removeChild(element);
     }
@@ -458,7 +458,7 @@ class JSTable {
         return content.match(/\{(.*?)\}/gmi);
     }
 
-    public interpretSequences(text: string, table: HTMLTableElement) {
+    public interpretSequences(text: string, table: HTMLTableElement): string {
         if (!table) throw new Error("interpretSequences(text, table): table is undefined.");
 
         var sequences = this.getSequencesFrom(text),
@@ -541,6 +541,8 @@ class JSTable {
             table.appendChild(caption);
         }
 
+        table.classList.add("generated-jstable");
+
         for (var y = 0; y < arr.length; y++) {
             this.addRow(arr[y], table, -1);
         }
@@ -589,7 +591,7 @@ class JSTable {
         return array;
     }
 
-    public generate(table: HTMLTableElement, container: HTMLElement): void {
+    public generate(table: HTMLTableElement, container: HTMLElement = document.body): void {
         container.appendChild(table);
     }
 }
