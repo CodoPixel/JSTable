@@ -1,3 +1,11 @@
+## [3.0.0] - February 14, 2021
+
+JSTable has completly changed in order to simplify its use:
+
++ New way to create a HTML table from a Javascript array
++ Three main features: identifiers, custom functions & sequences
++ Source code written in Typescript
+
 ## [2.0.0] - January 24, 2021
 
 Big changes and new features:

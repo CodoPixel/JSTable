@@ -388,7 +388,7 @@ class JSTable {
     translate(cell) {
         var row = cell.parentElement;
         var table = row.parentElement;
-        // if this is the tbody that we select
+        // if this is the tbody that we selected
         if (table instanceof HTMLTableSectionElement) table = row.parentElement.parentElement;
 
         var x = 0;

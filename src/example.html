@@ -13,12 +13,6 @@
 
     <script src="JSTable-new.js"></script>
     <script>
-        // var jsArray = [
-        //     ["@Nom", "@Prénom", "@Age"],
-        //     ["Hawking.c*2", "Aucune donnée.r*2", "."],
-        //     [".", "Stephen", "<Random(0, 70)>"]
-        // ];
-
         var jsArray = [
             ["@Last name", "@First name", "@Age"],
             ["Hawking", "Stephen", "<Random(0, 70)>.c*2"],
@@ -45,11 +39,9 @@
         var container = document.getElementById('container');
         jstable.generate(htmlArray, container);
 
+        // Example of a sequence
         var t = document.querySelector('table');
-
-        // #2-1 rather than #2-2 because the "." is ignored.
-        // Therefore, you only have 2 cells at y=2, so the last one is at x=1
-        // console.log(jstable.interpretSequences("{#2-1 * 2}", t));
+        console.log(jstable.interpretSequences("{#1-2 * 2}", t));
     </script>
 </body>
 </html>

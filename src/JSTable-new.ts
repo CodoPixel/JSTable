@@ -32,8 +32,8 @@ class Cell {
     private attributes:string[][];
 
     constructor(x:number, y:number, element:HTMLTableCellElement, table:HTMLTableElement) {
-        this.x = x;
-        this.y = y;
+        this.x = x || 0;
+        this.y = y || 0;
         this.element = element;
         this.table = table;
         this.container = this.table.parentElement;
@@ -84,7 +84,7 @@ class JSTable {
         }
     }
 
-    public getNumberOfCellsPerRow(table: HTMLTableElement): number {
+    public getNumberOfCellsPerRow(table:HTMLTableElement): number {
         var max = 0;
         var rows = Array.from(table.rows);
         for (var line of rows) {
@@ -94,7 +94,7 @@ class JSTable {
         return max;
     }
 
-    public getNumberOfCells(table: HTMLTableElement): number {
+    public getNumberOfCells(table:HTMLTableElement): number {
         var s = 0;
         for (var row of Array.from(table.rows)) {
             for (var x of Array.from(row.cells)) {
@@ -154,7 +154,7 @@ class JSTable {
         return cells;
     }
 
-    public selectSeveralColumns(x1: number, x2: number, table: HTMLTableElement): Cell[][] {
+    public selectSeveralColumns(x1:number, x2:number, table:HTMLTableElement): Cell[][] {
         var i:number = 0;
         var isReversed:boolean = x1 > x2;
         if (isReversed) {
@@ -174,7 +174,7 @@ class JSTable {
         }
     }
 
-    public selectMultipleCells(from: Pos, to: Pos, table: HTMLTableElement): Cell[] {
+    public selectMultipleCells(from:Pos, to:Pos, table:HTMLTableElement): Cell[] {
         var i:number = 0;
         var cells: Cell[] = [];
 
@@ -230,7 +230,7 @@ class JSTable {
         return isReversed ? cells.reverse() : cells;
     }
 
-    public translate(cell: HTMLTableCellElement): Cell {
+    public translate(cell:HTMLTableCellElement): Cell {
         var row = cell.parentElement;
         var table = row.parentElement;
         if (table instanceof HTMLTableSectionElement) table = row.parentElement.parentElement;
@@ -255,11 +255,11 @@ class JSTable {
         return new Cell(x, y, cell, (table as HTMLTableElement));
     }
 
-    public isCell(cell: any): boolean {
+    public isCell(cell:any): boolean {
         return cell instanceof Cell;
     }
 
-    public deleteTable(table: HTMLTableElement): void {
+    public deleteTable(table:HTMLTableElement): void {
         while (table.firstChild) {
             table.removeChild(table.firstChild);
         }
@@ -279,7 +279,7 @@ class JSTable {
         return true;
     }
 
-    public removeRow(y: number, table:HTMLTableElement): boolean {
+    public removeRow(y:number, table:HTMLTableElement): boolean {
         try {
             table.deleteRow(y);
             return true;
@@ -297,12 +297,12 @@ class JSTable {
         }
     }
 
-    public removeCell(cell: Cell): void {
+    public removeCell(cell:Cell): void {
         var element = cell.getElement();
         element.parentElement.removeChild(element);
     }
 
-    private _getArgumentsFrom(name: string, text: string): string[] {
+    private _getArgumentsFrom(name:string, text:string): string[] {
         var regex = new RegExp('<' + name + '\((.*)\)>', 'gmi');
         text = text.replace(', ', ',');
         text.replace(regex, '$1');
@@ -335,7 +335,7 @@ class JSTable {
         return text;
     }
 
-    public createCell(text: string, colspan:number, rowspan:number): HTMLTableCellElement {
+    public createCell(text: string, colspan:number=1, rowspan:number=1): HTMLTableCellElement {
         var cell = document.createElement('td');
 
         if (text[0] === "@") {
@@ -351,7 +351,7 @@ class JSTable {
         return cell;
     }
 
-    public addColumn(column: string[], table: HTMLTableElement, index:number = -1): void {
+    public addColumn(column:string[], table:HTMLTableElement, index:number=-1): void {
         for (var y = 0; y < column.length; y++) {
             var text = column[y];
             if (text === ".") continue;
@@ -369,7 +369,7 @@ class JSTable {
         }
     }
 
-    public addRow(row: string[], table: HTMLTableElement, index:number = -1): void {
+    public addRow(row:string[], table:HTMLTableElement, index:number=-1): void {
         var newRow = table.insertRow(index);
         for (var x = 0; x < row.length; x++) {
             var text = row[x];
@@ -388,7 +388,7 @@ class JSTable {
         return this.regexMultipleSelector.test(selector);
     }
 
-    public readMultipleSelector(selector: string): ComplexPos {
+    public readMultipleSelector(selector:string): ComplexPos {
         var matches = selector.match(/(\d{1,})/g);
         var y1 = parseInt(matches[0]),
             x1 = parseInt(matches[1]),
@@ -402,7 +402,7 @@ class JSTable {
         };
     }
 
-    public readBasicSelector(selector: string): Pos {
+    public readBasicSelector(selector:string): Pos {
         var matches = selector.match(/(\d{1,})/g);
         var y = parseInt(matches[0]),
             x = parseInt(matches[1]);
@@ -412,11 +412,11 @@ class JSTable {
         };
     }
 
-    public addCustomFunction(customFunction: CustomFunction): void {
+    public addCustomFunction(customFunction:CustomFunction): void {
         this.customFunctions.push(customFunction);
     }
 
-    public interpretCustomFunction(text: string): CustomFunctionInterpretation {
+    public interpretCustomFunction(text:string): CustomFunctionInterpretation {
         var newContent = text;
         var attributes: string[][] = [];
         var events: [string, Function][] = [];
@@ -454,11 +454,11 @@ class JSTable {
         };
     }
 
-    public getSequencesFrom(content: string): string[] {
+    public getSequencesFrom(content:string): string[] {
         return content.match(/\{(.*?)\}/gmi);
     }
 
-    public interpretSequences(text: string, table: HTMLTableElement): string {
+    public interpretSequences(text:string, table:HTMLTableElement): string {
         if (!table) throw new Error("interpretSequences(text, table): table is undefined.");
 
         var sequences = this.getSequencesFrom(text),
@@ -500,7 +500,7 @@ class JSTable {
         return newContent.replace(clothes, '');
     }
 
-    public read(table: HTMLTableElement): HTMLTableElement {
+    public read(table:HTMLTableElement): HTMLTableElement {
         var y = 0,
             x = 0;
         
@@ -529,7 +529,7 @@ class JSTable {
         return table;
     }
 
-    public jsArrayToHtml(arr:string[][], title?: string, titlePos?: string): HTMLTableElement {
+    public jsArrayToHtml(arr:string[][], title?:string, titlePos?:string): HTMLTableElement {
         var table = document.createElement('table');
 
         if (title) {
@@ -550,7 +550,7 @@ class JSTable {
         return this.read(table);
     }
 
-    public htmlTableToJS(table: HTMLTableElement): Cell[][] {
+    public htmlTableToJS(table:HTMLTableElement): Cell[][] {
         var array: Cell[][] = [];
 
         var rows = table.rows;
@@ -565,7 +565,7 @@ class JSTable {
         return array;
     }
 
-    public htmlTableToString(table: HTMLTableElement): string[][] {
+    public htmlTableToString(table:HTMLTableElement): string[][] {
         var array: string[][] = [];
         var rows = table.rows;
         var cellsPerRow = this.getNumberOfCellsPerRow(table);
@@ -591,7 +591,7 @@ class JSTable {
         return array;
     }
 
-    public generate(table: HTMLTableElement, container: HTMLElement = document.body): void {
+    public generate(table:HTMLTableElement, container:HTMLElement=document.body): void {
         container.appendChild(table);
     }
 }

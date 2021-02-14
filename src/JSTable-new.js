@@ -4,8 +4,8 @@
 ;
 class Cell {
     constructor(x, y, element, table) {
-        this.x = x;
-        this.y = y;
+        this.x = x || 0;
+        this.y = y || 0;
         this.element = element;
         this.table = table;
         this.container = this.table.parentElement;
@@ -279,7 +279,7 @@ class JSTable {
         text = text.replace(this.regexRowspan, '');
         return text;
     }
-    createCell(text, colspan, rowspan) {
+    createCell(text, colspan = 1, rowspan = 1) {
         var cell = document.createElement('td');
         if (text[0] === "@") {
             cell = document.createElement('th');
