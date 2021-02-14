@@ -140,7 +140,7 @@ JSTable offers a lot of features:
 
 |Method|return value|Description|
 |------|------------|-----------|
-|`setCommonClass(cc:string)`|`void`||Adds a common class to all cells when they are being generated.|
+|`setCommonClass(cc:string)`|`void`|Adds a common class to all cells when they are being generated.|
 |`doesExist(x:number, y:number, table:HTMLTableElement)`|`boolean`|Checks whether a cell exists in a table according to precise coordinates.|
 |`getNumberOfCellsPerRow(table: HTMLTableElement)`|`number`|Calculates the maximum number of cells per row in a HTML table.|
 |`getNumberOfCells(table: HTMLTableElement)`|`number`|Gets the number of cells in a table.|
@@ -164,7 +164,7 @@ JSTable offers a lot of features:
 |`read(table:HTMLTableElement)`|`HTMLTableElement`|Reads a table in order to do all the necessary interpretations (custom functions & sequences).|
 |`jsArrayToHtml(arr:string[][], title?:string, titlePos?:string)`|`HTMLTableElement`|Converts a js array into a HTML table.|
 |`htmlTableToJS(table:HTMLTableElement)`|`Cell[][]`|Converts a HTML table into a Javascript array of Cells.|
-|`htmlTableToString(table:HTMLTableElement)`|`string[][]`|Transforms an HTML table into an array of strings|
+|`htmlTableToString(table:HTMLTableElement)`|`string[][]`|Transforms an HTML table into an array of strings.|
 |`generate(table:HTMLTableElement, container:HTMLElement=document.body)`|`void`|Generates a table in the given parent element.|
 
 <sup>*</sup>NB: `ComplexPos`, `CustomFunction` & `CustomFunctionInterpretation` are Typescript interfaces defined as follows:
@@ -190,3 +190,7 @@ interface CustomFunctionInterpretation {
     events: [string, Function][]
 };
 ```
+
+## License
+
+MIT License
